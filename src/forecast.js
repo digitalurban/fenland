@@ -208,7 +208,7 @@ window.__FORECAST2__ = (function () {
     const facts = [];
     const push = (k, v, s) => { if (v != null && v !== "") facts.push({k, v, s}); };
     if (obs.max) push("Station so far", U.t(obs.max.v), obs.max.at ? "max " + obs.max.at : "observed");
-    push("Wind", d0.wind != null ? r0(d0.wind) + " mph" : null,
+    push("Wind", d0.wind != null ? r0(d0.wind) + " " + U.windUnit : null,
          (compass(d0.dir) || "") + (d0.gust != null ? " · gust " + r0(d0.gust) : ""));
     push("Rain", d0.pop != null ? r0(d0.pop) + "%" : null,
          d0.mm != null ? U.r(d0.mm) + " expected" : "chance");
@@ -393,7 +393,7 @@ window.__FORECAST2__ = (function () {
         "<div class='d-t'><span class='hi'>" + U.tv(p.tmax,0) + "°</span> <span class='lo'>" + U.tv(p.tmin,0) + "°</span></div>" +
         "<div class='fc-range'><span style='left:" + left.toFixed(1) + "%;width:" + width.toFixed(1) + "%'></span></div>" +
         "<div class='d-p'>" + (p.pop != null ? r0(p.pop) + "%" : "–") + (p.mm ? " · " + r1(p.mm) + "mm" : "") + "</div>" +
-        (p.gust != null || p.wind != null ? "<div class='d-w'>" + r0(p.gust != null ? p.gust : p.wind) + " mph</div>" : "") +
+        (p.gust != null || p.wind != null ? "<div class='d-w'>" + r0(p.gust != null ? p.gust : p.wind) + " " + U.windUnit + "</div>" : "") +
       "</div>";
     }).join("");
     renderDetail();
@@ -411,7 +411,7 @@ window.__FORECAST2__ = (function () {
          p.feelsMax != null ? "feels " + U.tv(p.feelsMax,0) + "° / " + U.tv(p.feelsMin,0) + "°" : "");
     push("Chance of rain", p.pop != null ? r0(p.pop) + "%" : null,
          p.mm != null ? U.r(p.mm) + " expected" : "");
-    push("Wind", p.wind != null ? r0(p.wind) + " mph" : null,
+    push("Wind", p.wind != null ? r0(p.wind) + " " + U.windUnit : null,
          (compass(p.dir) || "") + (p.gust != null ? " · gust " + r0(p.gust) : ""));
     const dayHrs = hrs.filter(h => h.isDay);
     push("Humidity", avg(hrs.map(h => h.rh)) != null ? r0(avg(hrs.map(h => h.rh))) + "%" : null,
@@ -562,9 +562,9 @@ window.__FORECAST2__ = (function () {
           : d0.pop >= 30 ? "There is a " + r0(d0.pop) + "% chance of catching a shower"
           : "It should stay largely dry, with only a " + r0(d0.pop) + "% chance of rain") +
           (d0.mm ? ", around " + U.r(d0.mm) + " if it comes to anything" : "") + ". " : "") +
-      (d0.wind != null ? "Winds " + describeWind(d0.wind) + " at " + r0(d0.wind) + " mph" +
+      (d0.wind != null ? "Winds " + describeWind(d0.wind) + " at " + r0(d0.wind) + " " + U.windUnit +
         (compass(d0.dir) ? " from the " + compass(d0.dir) : "") +
-        (d0.gust != null && d0.gust > d0.wind*1.3 ? ", gusting " + r0(d0.gust) + " mph" : "") + ". " : "") +
+        (d0.gust != null && d0.gust > d0.wind*1.3 ? ", gusting " + r0(d0.gust) + " " + U.windUnit : "") + ". " : "") +
       (d0.sunset ? "Sunset at " + hhmm(d0.sunset) + "." : "") + "</p>";
 
     if (d1) {
@@ -587,7 +587,7 @@ window.__FORECAST2__ = (function () {
         (wettest.pop != null ? "The wettest day looks like <b>" + wettest.t.toLocaleDateString("en-GB",{weekday:"long"}) +
           "</b> at " + r0(wettest.pop) + "%" + (wettest.mm ? ", around " + U.r(wettest.mm) : "") + ". " : "") +
         ((windiest.gust || 0) >= 30 ? "<b>" + windiest.t.toLocaleDateString("en-GB",{weekday:"long"}) +
-          "</b> is the windiest, gusting to " + r0(windiest.gust) + " mph." : "") + "</p>";
+          "</b> is the windiest, gusting to " + r0(windiest.gust) + " " + U.windUnit + "." : "") + "</p>";
     }
 
     if (S.cross && S.cross.length) {

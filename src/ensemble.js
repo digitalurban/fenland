@@ -483,9 +483,12 @@ window.__ENSEMBLE__ = (function () {
      unit the API returned before comparing — otherwise a 45 km/h breeze gets
      called "gale-force". */
   const TO_MPH = { mph: 1, kmh: 0.621371, ms: 2.23694, kn: 1.15078 };
+  /* display-unit value -> mph, for comparing against the thresholds below */
+  const asMph = w => w == null ? null
+    : w * (TO_MPH[String((CFG.units && CFG.units.wind) || "mph").toLowerCase()] || 1);
   const describeWind = w => {
     if (w == null) return "";
-    const m = w * (TO_MPH[String((CFG.units && CFG.units.wind) || "mph").toLowerCase()] || 1);
+    const m = asMph(w);
     return m>=45?"gale-force":m>=32?"very strong":m>=24?"blustery":m>=16?"moderate":m>=9?"light":"near-calm";
   };
   function spreadWord(s) {
@@ -575,8 +578,8 @@ window.__ENSEMBLE__ = (function () {
       (wettest.rain.probHeavy > 0.25 ? " and " + Math.round(wettest.rain.probHeavy*100) + "% produce " + U.r(5) + " or more — worth watching." : ".") + "</p>";
 
     out += "<p><b>Wind.</b> Winds are mostly " + describeWind(avg(d.map(x => x.wind.mean))) + ", peaking around " +
-      r0(windiest.wind.mean) + " mph on <b>" + dayName(windiest.date) + "</b>" +
-      (windiest.wind.p90 >= 32 ? " — and the windier members reach " + r0(windiest.wind.p90) + " mph, so a genuinely disruptive day cannot be ruled out." : ".") +
+      r0(windiest.wind.mean) + " " + U.windUnit + " on <b>" + dayName(windiest.date) + "</b>" +
+      (asMph(windiest.wind.p90) >= 32 ? " — and the windier members reach " + r0(windiest.wind.p90) + " " + U.windUnit + ", so a genuinely disruptive day cannot be ruled out." : ".") +
       " " + trend + "</p>";
 
     out += agree;

@@ -75,6 +75,10 @@
   const _su = k => String(SU[k] || "").toLowerCase();
 
   const inTemp2C = v => v == null ? v : (_su("temp") === "f" ? (v - 32) * 5 / 9 : v);
+  /* A temperature DIFFERENCE — a trend, a spread, an anomaly — converts by
+     ratio alone. Subtracting 32 from a difference is the classic way to get
+     a plausible-looking wrong number, so these are deliberately separate. */
+  const inTempDiff2C = v => v == null ? v : (_su("temp") === "f" ? v * 5 / 9 : v);
   const inRain2mm = v => {
     if (v == null) return v;
     const u = _su("rain");
@@ -89,6 +93,16 @@
      so it only needs to reach the unit being displayed. */
   const WIND_TO_MPH = { mph: 1, kmh: 0.621371, ms: 2.23694, kn: 1.15078 };
   const MPH_TO_WIND = { mph: 1, kmh: 1.609344, ms: 0.44704, kn: 0.868976 };
+  /* The wind dial's face — colour bands, Beaufort marks, ticks and range —
+     was drawn in mph. Now that readings arrive in the display unit, the face
+     has to be drawn in it too, or the needle points at the wrong band.
+     60 mph rounded to something a dial can sensibly be numbered in: */
+  const DIAL = { mph: { max: 60,  maj: 10 }, kmh: { max: 100, maj: 20 },
+                 ms:  { max: 30,  maj: 5  }, kn:  { max: 55,  maj: 10 } };
+  const DISP_WIND = String((CFG.units && CFG.units.wind) || "mph").toLowerCase();
+  const DIAL_MAX = (DIAL[DISP_WIND] || DIAL.mph).max;
+  const DIAL_MAJ = (DIAL[DISP_WIND] || DIAL.mph).maj;
+
   const inWind = v => {
     if (v == null) return v;
     const from = WIND_TO_MPH[_su("wind")] || 1;
@@ -207,7 +221,7 @@
         const now = Math.floor(Date.now() / 1000);
         pressureHistory = rawLog.sort((a, b) => a.t - b.t).map(point => ({
           minsAgo: Math.max(0, Math.round((now - point.t) / 60)),
-          mb: parseFloat(point.mb)
+          mb: inPres2mb(parseFloat(point.mb))
         })).filter(point => point.minsAgo <= 720);
       } catch (e) {
         console.warn("History log file missing or unreadable — keeping last known data:", e);
@@ -219,9 +233,11 @@
         const res = await fetch(WEEWX_JSON_URL + "?cacheburst=" + Date.now());
         const j = await res.json();
         weewxSummaryData = j;
-        const baro = parseFloat(j?.current?.["baro trend"]?.value);
+        /* Both are CHANGES over three hours, not readings. Pressure scales
+           linearly so the ordinary converter is fine; temperature does not. */
+        const baro = inPres2mb(parseFloat(j?.current?.["baro trend"]?.value));
         weewxBaroTrendMb = isNaN(baro) ? null : baro;
-        const temp = parseFloat(j?.current?.["temp trend"]?.value);
+        const temp = inTempDiff2C(parseFloat(j?.current?.["temp trend"]?.value));
         weewxTempTrendC = isNaN(temp) ? null : temp;
       } catch (e) {
         console.warn("weewx.json missing or unreadable — falling back to local trend estimate:", e);
@@ -287,10 +303,30 @@
       return j;
     } 
 
-    function seriesPoints(chartObj, key) {
+    /* Belchertown publishes these charts in whatever unit system weeWX is set
+       to, which is not necessarily what this page displays. Normalise to metric
+       using `stationUnits`, then out to the display unit — so the axis label,
+       the plotted values and the colour bands in colours.js (which are computed
+       in display units) all agree. Pass scale = null to leave a series alone:
+       humidity, wind direction and AQI are not unit-bearing. */
+    function toDisplay(scale, v) {
+      if (v == null || typeof U === "undefined") return v;
+      if (scale === "temp") return U.axisTemp(inTemp2C(v));
+      if (scale === "rain") return U.axisRain(inRain2mm(v));
+      if (scale === "baro") {
+        const mb = inPres2mb(v);
+        return U.presUnit === "inHg" ? U.conv.mb2inhg(mb) : mb;
+      }
+      if (scale === "wind") return inWind(v);   // already lands in the display unit
+      return v;
+    }
+
+    function seriesPoints(chartObj, key, scale) {
       const s = chartObj?.series?.[key];
       if (!s || !Array.isArray(s.data)) return [];
-      return s.data.filter(p => p[1] !== null && p[1] !== undefined);
+      return s.data
+        .filter(p => p[1] !== null && p[1] !== undefined)
+        .map(p => scale ? [p[0], toDisplay(scale, p[1])] : p);
     } 
 
     async function renderCharts(span) {
@@ -306,26 +342,26 @@
 
         Highcharts.chart('chartTemp', {
           chart: { type: 'line', height: 240 }, xAxis: { type: 'datetime' },
-          yAxis: [{ title: { text: '°C' } }, { title: { text: '%' }, opposite: true, min: 0, max: 100, gridLineWidth: 0 }],
-          series: [{ name: 'Temperature', data: seriesPoints(c1, 'outTemp'), yAxis: 0 }, { name: 'Wind Chill', data: seriesPoints(c1, 'windchill'), yAxis: 0, dashStyle: 'ShortDot' }, { name: 'Humidity', data: seriesPoints(c1, 'outHumidity'), yAxis: 1, opacity: 0.55 }]
+          yAxis: [{ title: { text: U.tempUnit } }, { title: { text: '%' }, opposite: true, min: 0, max: 100, gridLineWidth: 0 }],
+          series: [{ name: 'Temperature', data: seriesPoints(c1, 'outTemp', 'temp'), yAxis: 0 }, { name: 'Wind Chill', data: seriesPoints(c1, 'windchill', 'temp'), yAxis: 0, dashStyle: 'ShortDot' }, { name: 'Humidity', data: seriesPoints(c1, 'outHumidity'), yAxis: 1, opacity: 0.55 }]
         }); 
 
         Highcharts.chart('chartWind', {
           chart: { type: 'line', height: 240 }, xAxis: { type: 'datetime' },
-          yAxis: [{ title: { text: 'mph' }, min: 0 }, { title: { text: '°' }, opposite: true, min: 0, max: 360, tickInterval: 90, gridLineWidth: 0 }],
-          series: [{ name: 'Wind Speed', data: seriesPoints(c2, 'windSpeed'), yAxis: 0 }, { name: 'Gust', data: seriesPoints(c2, 'windGust'), yAxis: 0, dashStyle: 'ShortDot' }, { name: 'Direction', type: 'scatter', data: seriesPoints(c2, 'windDir'), yAxis: 1, marker: { enabled: true, radius: 2 } }]
+          yAxis: [{ title: { text: U.windUnit }, min: 0 }, { title: { text: '°' }, opposite: true, min: 0, max: 360, tickInterval: 90, gridLineWidth: 0 }],
+          series: [{ name: 'Wind Speed', data: seriesPoints(c2, 'windSpeed', 'wind'), yAxis: 0 }, { name: 'Gust', data: seriesPoints(c2, 'windGust', 'wind'), yAxis: 0, dashStyle: 'ShortDot' }, { name: 'Direction', type: 'scatter', data: seriesPoints(c2, 'windDir'), yAxis: 1, marker: { enabled: true, radius: 2 } }]
         }); 
 
         Highcharts.chart('chartRain', {
           chart: { height: 240 }, xAxis: { type: 'datetime' },
-          yAxis: [{ title: { text: 'mm/hr' }, min: 0 }, { title: { text: 'mm total' }, opposite: true, min: 0, gridLineWidth: 0 }],
-          series: [{ name: 'Rain Rate', type: 'column', data: seriesPoints(c3, 'rainRate'), yAxis: 0 }, { name: 'Rain Total', type: 'line', data: seriesPoints(c3, 'rainTotal'), yAxis: 1 }]
+          yAxis: [{ title: { text: U.rainUnit + '/hr' }, min: 0 }, { title: { text: U.rainUnit + ' total' }, opposite: true, min: 0, gridLineWidth: 0 }],
+          series: [{ name: 'Rain Rate', type: 'column', data: seriesPoints(c3, 'rainRate', 'rain'), yAxis: 0 }, { name: 'Rain Total', type: 'line', data: seriesPoints(c3, 'rainTotal', 'rain'), yAxis: 1 }]
         }); 
 
         Highcharts.chart('chartBaro', {
           chart: { type: 'spline', height: 240 }, xAxis: { type: 'datetime' },
-          yAxis: { title: { text: 'mbar' } },
-          series: [{ name: 'Barometer', data: seriesPoints(c4, 'barometer') }]
+          yAxis: { title: { text: U.presUnit } },
+          series: [{ name: 'Barometer', data: seriesPoints(c4, 'barometer', 'baro') }]
         });
 
         // 2. Fetch & Render Air Quality History JSON (day_aq.json, week_aq.json, etc.)
@@ -427,13 +463,44 @@
     const STAT_PERIODS = [['day','Day'], ['week','Week'], ['month','Month'], ['year','Year']];
     const KMH_TO_MPH = 0.621371;
 
+    /* weewx.json states its own units per value, so rather than assume, read
+       the label and convert into whatever the page is displaying. Without this
+       the Stats tab silently ignores `units` in config.js and shows °C on a
+       page set to Fahrenheit — correct, but inconsistent with every other tab. */
     function fmtStatVal(obj, isWind) {
       if (!obj || obj.value === null || obj.value === undefined) return null;
       let v = parseFloat(obj.value);
       if (isNaN(v)) return null;
-      let units = obj.units || '';
-      if (isWind && units.trim().toLowerCase() === 'km/h') { v = v * KMH_TO_MPH; units = 'mph'; }
-      return `${v.toFixed(1)}${units}`;
+      const raw = String(obj.units || '').trim();
+      const u = raw.toLowerCase().replace(/[°\s]/g, '');
+
+      if (u === 'c' || u === 'f') {
+        const c = u === 'f' ? (v - 32) * 5 / 9 : v;
+        return U.t(c, 1);
+      }
+      if (u === 'mm' || u === 'cm' || u === 'in' || u === 'inch') {
+        const mm = u === 'in' || u === 'inch' ? v * 25.4 : u === 'cm' ? v * 10 : v;
+        return U.r(mm);
+      }
+      if (u === 'mm/h' || u === 'mmperhour' || u === 'in/h' || u === 'inperhour') {
+        const mm = u.startsWith('in') ? v * 25.4 : v;
+        return U.r(mm) + '/h';
+      }
+      if (u === 'mbar' || u === 'mb' || u === 'hpa' || u === 'inhg') {
+        const mb = u === 'inhg' ? v / 0.0295299830714 : v;
+        return U.p(mb);
+      }
+      if (isWind || ['km/h','kmh','mph','m/s','ms','knots','kn'].includes(u)) {
+        const toMph = { 'km/h': KMH_TO_MPH, kmh: KMH_TO_MPH, mph: 1,
+                        'm/s': 2.23694, ms: 2.23694, knots: 1.15078, kn: 1.15078 }[u];
+        if (!toMph) return `${v.toFixed(1)}${raw}`;
+        /* U.w labels but does not convert — it expects a value already in the
+           display unit — so go via mph and land in the right one. */
+        const disp = String((CFG.units && CFG.units.wind) || 'mph').toLowerCase();
+        return U.w(v * toMph * (MPH_TO_WIND[disp] || 1));
+      }
+      /* humidity, UV, anything unitless or unrecognised — pass through */
+      return `${v.toFixed(1)}${raw}`;
     } 
 
     function statCell(periodData, row) {
@@ -530,12 +597,14 @@
     function buildDialVectors(isMobile) {
       const suffix = isMobile ? '_mob' : '';
       const c = 240;
+      /* thresholds below are mph; convert them onto the dial's own scale */
+      const mm_ = MPH_TO_WIND[DISP_WIND] || 1;
       const colorBands = [{ start: 0, end: 2, color: "#38bdf8" }, { start: 2, end: 5, color: "#22d3ee" }, { start: 4, end: 8, color: "#2dd4bf" }, { start: 8, end: 13, color: "#4ade80" }, { start: 13, end: 19, color: "#a3e635" }, { start: 19, end: 25, color: "#fde047" }, { start: 25, end: 32, color: "#fbbf24" }, { start: 32, end: 39, color: "#f59e0b" }, { start: 39, end: 47, color: "#ea580c" }, { start: 47, end: 60, color: "#ef4444" }]; 
 
       let s = '';
       colorBands.forEach(b => {
-        const degStart = -135 + (b.start / 60) * 270;
-        const degEnd = -135 + (b.end / 60) * 270;
+        const degStart = -135 + (b.start * mm_ / DIAL_MAX) * 270;
+        const degEnd = -135 + (b.end * mm_ / DIAL_MAX) * 270;
         const a1 = (degStart - 90) * Math.PI / 180;
         const a2 = (degEnd - 90) * Math.PI / 180;
         const rOut = 208; const rIn = 172;
@@ -545,25 +614,26 @@
       s += `<circle cx="${c}" cy="${c}" r="235" fill="none" stroke="var(--ink)" stroke-width="2.5"/>`;
       s += `<circle cx="${c}" cy="${c}" r="208" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
       s += `<circle cx="${c}" cy="${c}" r="172" fill="none" stroke="var(--ink)" stroke-width="1.5"/>`;
-      for (let speedVal = 0; speedVal <= 60; speedVal += 1) {
-        const targetDeg = -135 + (speedVal / 60) * 270;
+      const tickStep = DIAL_MAJ / 10;
+      for (let speedVal = 0; speedVal <= DIAL_MAX + 1e-9; speedVal += tickStep) {
+        const targetDeg = -135 + (speedVal / DIAL_MAX) * 270;
         const a = (targetDeg - 90) * Math.PI / 180;
-        const isMaj = speedVal % 10 === 0;
+        const isMaj = Math.abs(speedVal % DIAL_MAJ) < 1e-9;
         const rOut = 235; const rIn = isMaj ? 208 : 224;
         s += `<line x1="${c+Math.cos(a)*rIn}" y1="${c+Math.sin(a)*rIn}" x2="${c+Math.cos(a)*rOut}" y2="${c+Math.sin(a)*rOut}" stroke="var(--ink)" stroke-width="${isMaj?3:1.5}"/>`;
         if (isMaj) {
-          s += `<text x="${c+Math.cos(a)*185}" y="${c+Math.sin(a)*185 + 6}" text-anchor="middle" font-family="var(--sans)" font-size="18" font-weight="bold" fill="var(--ink)">${speedVal}</text>`;
+          s += `<text x="${c+Math.cos(a)*185}" y="${c+Math.sin(a)*185 + 6}" text-anchor="middle" font-family="var(--sans)" font-size="18" font-weight="bold" fill="var(--ink)">${Math.round(speedVal)}</text>`;
         }
       } 
 
       const beauMap = [{num: 0, start: 0}, {num: 1, start: 1}, {num: 2, start: 4}, {num: 3, start: 8}, {num: 4, start: 13}, {num: 5, start: 19}, {num: 6, start: 25}, {num: 7, start: 32}, {num: 8, start: 39}, {num: 9, start: 47}];
       beauMap.forEach((b) => {
-        const deg = -135 + (b.start / 60) * 270; const a = (deg - 90) * Math.PI / 180;
+        const deg = -135 + (b.start * mm_ / DIAL_MAX) * 270; const a = (deg - 90) * Math.PI / 180;
         s += `<line x1="${c+Math.cos(a)*160}" y1="${c+Math.sin(a)*160}" x2="${c+Math.cos(a)*172}" y2="${c+Math.sin(a)*172}" stroke="var(--ink)" stroke-width="2"/>`;
         s += `<text x="${c+Math.cos(a)*146}" y="${c+Math.sin(a)*146 + 5}" text-anchor="middle" font-family="var(--mono)" font-size="13" font-weight="700" fill="var(--ink)">B${b.num}</text>`;
       });
       s += `<text x="${c}" y="${c - 25}" text-anchor="middle" font-family="var(--sans)" font-size="24" font-weight="bold" fill="var(--ink)">WIND</text>`;
-      s += `<text x="${c}" y="${c + 45}" text-anchor="middle" font-family="var(--sans)" font-size="24" font-weight="bold" fill="var(--ink)">SPEED MPH</text>`;
+      s += `<text x="${c}" y="${c + 45}" text-anchor="middle" font-family="var(--sans)" font-size="24" font-weight="bold" fill="var(--ink)">SPEED ${(typeof U !== "undefined" ? U.windUnit : "mph").toUpperCase()}</text>`;
       s += `<g id="maxSpeedMarker${suffix}" class="dial-needle-pivot"><circle cx="240" cy="240" r="240" fill="none" />${markerShadowSVG()}<polygon points="240,16 234,32 246,32" fill="var(--max-marker)"/></g>`;
       s += `<g id="speedNeedle${suffix}" class="dial-needle-pivot"><circle cx="240" cy="240" r="240" fill="none" />${needleShadowSVG()}<polygon points="240,36 246,240 234,240" fill="var(--ink)" /><line x1="240" y1="240" x2="240" y2="312" stroke="var(--ink)" stroke-width="6" /><circle cx="240" cy="326" r="14" fill="none" stroke="var(--ink)" stroke-width="6" /></g><circle cx="240" cy="240" r="12" fill="var(--ink)" /><circle cx="240" cy="240" r="5" fill="var(--paper)" /><circle cx="240" cy="240" r="2" fill="var(--ink)" />`;
 
@@ -898,8 +968,8 @@
           currentCompassHeading += diff;
           safeRotate('compassNeedle', currentCompassHeading);
         }
-        safeRotate('speedNeedle', -135 + (Math.min(Math.max(wSpd, 0), 60) / 60) * 270);
-        safeRotate('maxSpeedMarker', -135 + (Math.min(Math.max(dayWindMax, 0), 60) / 60) * 270);
+        safeRotate('speedNeedle', -135 + (Math.min(Math.max(wSpd, 0), DIAL_MAX) / DIAL_MAX) * 270);
+        safeRotate('maxSpeedMarker', -135 + (Math.min(Math.max(dayWindMax, 0), DIAL_MAX) / DIAL_MAX) * 270);
         if (!isNaN(windGustDir10)) {
           let gDiff = (windGustDir10 - (currentGustHeading % 360));
           if (gDiff > 180) gDiff -= 360; if (gDiff < -180) gDiff += 360;
@@ -970,8 +1040,8 @@
           currentCompassHeading_mob += diffMob;
           safeRotate('compassNeedle_mob', currentCompassHeading_mob);
         }
-        safeRotate('speedNeedle_mob', -135 + (Math.min(Math.max(wSpd, 0), 60) / 60) * 270);
-        safeRotate('maxSpeedMarker_mob', -135 + (Math.min(Math.max(dayWindMax, 0), 60) / 60) * 270);
+        safeRotate('speedNeedle_mob', -135 + (Math.min(Math.max(wSpd, 0), DIAL_MAX) / DIAL_MAX) * 270);
+        safeRotate('maxSpeedMarker_mob', -135 + (Math.min(Math.max(dayWindMax, 0), DIAL_MAX) / DIAL_MAX) * 270);
         if (!isNaN(windGustDir10)) {
           let gDiffMob = (windGustDir10 - (currentGustHeading_mob % 360));
           if (gDiffMob > 180) gDiffMob -= 360; if (gDiffMob < -180) gDiffMob += 360;

@@ -86,8 +86,10 @@ These two tabs read the chart JSON published by the
 empty and the other three tabs work exactly as normal — Fenland doesn't
 duplicate work that skin already does well.
 
-Every series is colour-banded by value: temperature on a cold-to-hot scale, wind
-on Beaufort colours, AQI on the standard bands.
+Every series is colour-banded by value — temperature on a cold-to-hot scale,
+wind on Beaufort colours, AQI on the standard bands — and converted into your
+display units on the way through, so these tabs read in the same units as the
+rest of the page even if weeWX publishes in another.
 
 ---
 
@@ -249,6 +251,15 @@ keys Fenland expects (`outTemp_C`, `barometer_mbar`, `dayRain_mm`). Anything
 else — including US labels like `outTemp_F` — needs remapping with `fields` in
 `config.js`. There's a full list in `config.example.js`.
 
+`stationUnits` governs **everything your station sends**, not just the live
+packet: the barograph history, the three-hour trends in `weewx.json`, and the
+Belchertown chart JSON behind the History tab. All of it is normalised on
+arrival and re-expressed in your display units, so one setting is enough.
+
+The wind dial rescales with `units.wind` too — 0–60 mph, 0–100 km/h, 0–30 m/s
+or 0–55 kn — with the Beaufort marks landing at the right physical speeds
+whichever you pick.
+
 One warning: getting `stationUnits` wrong is silent rather than noisy. 21°C
 labelled as °F reads as a cold day, not as an error. If the numbers look
 consistently wrong, check this before anything else.
@@ -294,11 +305,12 @@ is also the demo — so if the demo is broken, so is the author's weather statio
 
 **Known gaps, honestly:**
 
-- **Imperial display is tested but not battle-tested.** Conversion is verified
-  automatically in both unit systems, including the awkward case of temperature
-  *differences*, but no one has yet run the page in Fahrenheit in anger. If you
-  are the first, please open an issue with a screenshot of anything that reads
-  oddly.
+- **Imperial display is tested headlessly, not visually.** Every panel is
+  exercised across both temperature systems and all four wind units, including
+  the awkward case of temperature *differences* — but no one has yet looked at
+  the page in Fahrenheit in a real browser, so layout and label-width problems
+  are entirely possible. If you are the first, please open an issue with a
+  screenshot of anything that reads oddly.
 - **Forecast verification needs weeks before it says much.** That is inherent,
   not a defect, but do not judge the model league table on a fortnight.
 - **Only Fahrenheit-style US units are handled on input.** `stationUnits`
