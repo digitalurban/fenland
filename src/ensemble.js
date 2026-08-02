@@ -532,8 +532,8 @@ window.__ENSEMBLE__ = (function () {
       : meanP >= 1010 ? "pressure sits close to average — a mixed, changeable regime"
       : "low pressure dominates, so expect an unsettled Atlantic feed";
     const trend = Math.abs(dp) < 3 ? "Pressure holds roughly steady across the period."
-      : dp > 0 ? "Pressure builds by about " + U.dp(dp) + "  through the period, so conditions should turn quieter later on."
-      : "Pressure falls by about " + U.dp(Math.abs(dp)) + "  through the period, so things should turn more unsettled later on.";
+      : dp > 0 ? "Pressure builds by about " + U.dp(dp) + " through the period, so conditions should turn quieter later on."
+      : "Pressure falls by about " + U.dp(Math.abs(dp)) + " through the period, so things should turn more unsettled later on.";
 
     const perModel = nm.map(m => {
       const days = d.filter(x => x.byModel[m.id]);
