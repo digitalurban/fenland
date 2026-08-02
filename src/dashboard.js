@@ -148,6 +148,30 @@
     beaufort:    "beaufort_count"
   }, CFG.fields || {});
 
+  /* The default field names assume METRICWX with wind overridden to mph — a
+     common weeWX setup, but not the only one. A plain METRICWX feed publishes
+     wind in m/s under a matching key, and METRIC publishes windSpeed_kph and
+     rain in cm. Rather than let that show up as a silently blank gauge, say so
+     once, and print the keys that ARE present so the fix is obvious. */
+  let fieldsAudited = false;
+  function auditFields(data) {
+    if (fieldsAudited || !data || typeof data !== "object") return;
+    const keys = Object.keys(data);
+    if (keys.length < 3) return;              // not a real payload yet
+    fieldsAudited = true;
+    const missing = Object.entries(FIELD)
+      .filter(([, key]) => data[key] === undefined)
+      .map(([name, key]) => name + " -> " + key);
+    if (!missing.length) return;
+    console.warn(
+      "Fenland: " + missing.length + " configured field(s) are absent from the feed:\n  " +
+      missing.join("\n  ") +
+      "\n\nThe payload actually contains:\n  " + keys.sort().join(", ") +
+      "\n\nMap the right names with `fields` in config.js, and declare the units " +
+      "with `stationUnits` if they are not metric. See config.example.js.");
+  }
+
+
 
   /* "52.61° N · 0.39° E · 15M ASL — DAVIS VANTAGE · MQTT" assembled from config */
   function stationSubtitle() {
@@ -1127,7 +1151,7 @@
         else if(t === TOPIC_LIGHTNING) { const v = parseFloat(valStr); liveLightningCount = isNaN(v) ? null : v; }
         else if(t === TOPIC_LIGHTNING_DISTANCE) { const v = parseFloat(valStr); liveLightningDistance = isNaN(v) ? null : v; }
         else if(t === TOPIC_AQI_TREND) { liveAqiTrend = valStr || null; }
-        else if(t === WS_TOPIC) { let m; try { m = JSON.parse(valStr); } catch { return; } data = m; }
+        else if(t === WS_TOPIC) { let m; try { m = JSON.parse(valStr); } catch { return; } data = m; auditFields(data); }
         lastMsgTime = Date.now();
         mqttStatus = 'live';
         render();
@@ -1149,6 +1173,7 @@
         const m = await res.json();
         if (m && typeof m === "object") {
           data = m;
+          auditFields(data);
           lastMsgTime = Date.now();
           mqttStatus = 'live';
           render();

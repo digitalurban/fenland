@@ -102,6 +102,11 @@ window.WXCONFIG = {
      This maps NAMES only. If your station publishes in US units, say so in
      `stationUnits` below — you do not have to reconfigure weeWX.
 
+     The defaults below assume METRICWX with wind overridden to mph. Stock
+     METRICWX sends wind in m/s; METRIC sends windSpeed_kph and rain in cm;
+     US sends _F and inches. If a name is wrong, Fenland logs the mismatch
+     to the browser console with the payload's real keys — check there first.
+
      Override only the names that differ:                                */
   // fields: {
   //   temp: "outTemp_C",   appTemp: "appTemp_C",  dewpoint: "dewpoint_C",

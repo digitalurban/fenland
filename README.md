@@ -245,11 +245,31 @@ thresholds, the ensemble spread, the 86-year rankings — is computed in metric.
 Values are converted once on arrival and once for display, and nothing in
 between has to care.
 
-The **names** in the payload are a different question again. weewx-mqtt with
-`unit_system = METRICWX` and `append_units_label = True` produces exactly the
-keys Fenland expects (`outTemp_C`, `barometer_mbar`, `dayRain_mm`). Anything
-else — including US labels like `outTemp_F` — needs remapping with `fields` in
-`config.js`. There's a full list in `config.example.js`.
+The **names** in the payload are a different question again, and the defaults
+are worth being precise about: they assume `unit_system = METRICWX` with
+`append_units_label = True`, *and* wind overridden to mph. That override is
+common but it is not stock, so be aware of what you actually publish:
+
+| Your weeWX setting | Wind arrives as | Rain arrives as |
+|---|---|---|
+| METRICWX + mph override | `windSpeed_mph` | `dayRain_mm` |
+| METRICWX (stock) | m/s | `dayRain_mm` |
+| METRIC | `windSpeed_kph` | `dayRain_cm` |
+| US | mph | inches |
+
+Only the first row works untouched. For the others, remap with `fields` and
+declare the units with `stationUnits` — for a stock METRIC feed:
+
+```js
+fields:       { windSpeed: "windSpeed_kph", windGust: "windGust_kph",
+                dayRain: "dayRain_cm", rainRate: "rainRate_cm_per_hour" },
+stationUnits: { rain: "cm", wind: "kmh" },
+```
+
+You don't have to work this out from the table. If a configured name is absent
+from your feed, Fenland says so once in the browser console — naming what it
+looked for and listing every key the payload actually contains. Open the
+developer console if a gauge stays blank.
 
 `stationUnits` governs **everything your station sends**, not just the live
 packet: the barograph history, the three-hour trends in `weewx.json`, and the
