@@ -72,7 +72,21 @@ window.__WXCOLOURS__ = (function () {
   ];
 
   const SCALES = { TEMP, WIND, AQI, PM25, BARO, RAIN, UV, SOLAR };
-  const zones = scale => scale.map(z => z.max == null ? { color: z.c } : { value: z.max, color: z.c });
+
+  /* Thresholds are written in metric, but charts plot display units — both
+     our own (converted before plotting) and weeWX's (published in whatever the
+     user configured). The band edges have to move with them, or a 68°F
+     afternoon lands in the ">30" dark-red band. */
+  function convertEdge(scale, max) {
+    const u = (typeof U !== "undefined") ? U : null;
+    if (!u || max == null) return max;
+    if (scale === TEMP) return u.axisTemp(max);
+    if (scale === RAIN) return u.axisRain(max);
+    if (scale === BARO) return u.presUnit === "inHg" ? u.conv.mb2inhg(max) : max;
+    return max;                    // wind, AQI, PM2.5, UV, solar: unchanged
+  }
+  const zones = scale => scale.map(z =>
+    z.max == null ? { color: z.c } : { value: convertEdge(scale, z.max), color: z.c });
 
   // Match a series to a scale by its name. Deliberately loose so it keeps
   // working if a series gets renamed slightly.

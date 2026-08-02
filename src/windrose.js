@@ -13,15 +13,25 @@
 (function () {
   "use strict";
 
-  const DIRS = 16, STEP = 360 / DIRS, CALM_BELOW = 1.0;   // mph
+  const DIRS = 16, STEP = 360 / DIRS;
+
+  /* Band edges are written in mph. weeWX publishes wind in whatever the user
+     configured, so scale the edges to match rather than mislabelling a 20 km/h
+     breeze as 20 mph. */
+  const FROM_MPH = { mph: 1, kmh: 1.609344, ms: 0.44704, kn: 0.868976 };
+  const WU = String(((window.WXCONFIG || {}).units || {}).wind || "mph").toLowerCase();
+  const K = FROM_MPH[WU] || 1;
+  const CALM_BELOW = 1.0 * K;
   const LABELS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+  const EDGES = [4, 8, 13, 19, 25];
+  const lbl = n => String(Math.round(n * K));
   const BANDS = [
-    { max: 4,    c: "#38bdf8", l: "&lt;4"  },
-    { max: 8,    c: "#2dd4bf", l: "4–8"   },
-    { max: 13,   c: "#4ade80", l: "8–13"  },
-    { max: 19,   c: "#a3e635", l: "13–19" },
-    { max: 25,   c: "#fde047", l: "19–25" },
-    { max: null, c: "#f59e0b", l: "25+"   }
+    { max: EDGES[0]*K, c: "#38bdf8", l: "&lt;" + lbl(4) },
+    { max: EDGES[1]*K, c: "#2dd4bf", l: lbl(4)  + "–" + lbl(8)  },
+    { max: EDGES[2]*K, c: "#4ade80", l: lbl(8)  + "–" + lbl(13) },
+    { max: EDGES[3]*K, c: "#a3e635", l: lbl(13) + "–" + lbl(19) },
+    { max: EDGES[4]*K, c: "#fde047", l: lbl(19) + "–" + lbl(25) },
+    { max: null,       c: "#f59e0b", l: lbl(25) + "+" }
   ];
 
   const seriesData = (chart, key) => {
@@ -139,7 +149,7 @@
     el.innerHTML = "<div class='wr-wrap'>" + svg +
       "<div class='wr-legend'>" +
         BANDS.map(b => "<span><i style='background:" + b.c + "'></i>" + b.l + "</span>").join("") +
-        "<span style='color:var(--mist)'>mph</span>" +
+        "<span style='color:var(--mist)'>" + (typeof U !== "undefined" ? U.windUnit : "mph") + "</span>" +
       "</div>" +
       "<div class='wr-note'>" + n.toLocaleString() + " observations · prevailing " + dominant +
         " (" + Math.max.apply(null, pct).toFixed(0) + "%)" +

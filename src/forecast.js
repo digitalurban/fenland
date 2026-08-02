@@ -65,6 +65,7 @@ window.__FORECAST2__ = (function () {
   // The scale itself lives in window.__WXCOLOURS__ so the history charts and
   // this one can never drift apart. Edit it there, not here.
   const scale = () => (window.__WXCOLOURS__ && window.__WXCOLOURS__.TEMP_SCALE) || [];
+    /* zone thresholds must be in the same units as the plotted data */
   const tempZones = () => (window.__WXCOLOURS__ ? window.__WXCOLOURS__.zonesFor("Temperature") : []);
   function renderTempKey() {
     const k = $("fcTempKey"); if (!k) return;
@@ -281,9 +282,11 @@ window.__FORECAST2__ = (function () {
     }
 
     const t = hrs.map(p => p.t.getTime());
-    const temp = hrs.map(p => [p.t.getTime(), p.temp]);
-    const feel = hrs.map(p => [p.t.getTime(), p.feels]);
-    const rain = hrs.map(p => [p.t.getTime(), p.mm == null ? 0 : p.mm]);
+    /* Charts plot DISPLAY units — the axis is labelled in them, so the data
+       has to be converted too. Everything above this point is metric. */
+    const temp = hrs.map(p => [p.t.getTime(), U.axisTemp(p.temp)]);
+    const feel = hrs.map(p => [p.t.getTime(), U.axisTemp(p.feels)]);
+    const rain = hrs.map(p => [p.t.getTime(), U.axisRain(p.mm == null ? 0 : p.mm)]);
     const pop  = hrs.map(p => [p.t.getTime(), p.pop]);
 
     // ensemble 10-90% band for context — uncertainty visibly widening with range

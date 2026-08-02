@@ -257,14 +257,18 @@ window.__ENSEMBLE__ = (function () {
     cv.ontouchend = () => { setTimeout(() => { tip.style.opacity = 0; }, 1800); };
   }
 
-  function spaghetti(id, varName, unit, dec, legendId) {
+  function spaghetti(id, varName, unit, dec, legendId, convert) {
+    /* `toDisp` turns a metric value into display units. Applied to the
+       plotted values and to every label, so axis, tooltip and line agree. */
+    const toDisp = convert || (v => v);
     const cv = $(id); if (!cv) return;
     const g = setup(cv); if (!g) return;
     const { ctx, w, h } = g;
     const series = S.data[varName] || []; if (!series.length) return;
     const t = S.times;
     let lo = Infinity, hi = -Infinity;
-    series.forEach(s => s.arr.forEach(v => { if (v != null) { if (v < lo) lo = v; if (v > hi) hi = v; } }));
+    series.forEach(s => s.arr.forEach(v => { if (v != null) { const d = toDisp(v);
+      if (d < lo) lo = d; if (d > hi) hi = d; } }));
     if (!isFinite(lo)) return;
     const pad = (hi-lo)*0.08 || 1; lo -= pad; hi += pad;
     const { px, py } = axes(ctx, w, h, lo, hi, t, v => v.toFixed(dec) + unit);
@@ -275,8 +279,9 @@ window.__ENSEMBLE__ = (function () {
     });
 
     ctx.beginPath(); let go = false;
-    st.forEach((s,i) => { if (s.p90 == null) return; go ? ctx.lineTo(px(i),py(s.p90)) : (ctx.moveTo(px(i),py(s.p90)), go = true); });
-    for (let i = st.length-1; i >= 0; i--) if (st[i].p10 != null) ctx.lineTo(px(i), py(st[i].p10));
+    st.forEach((s,i) => { if (s.p90 == null) return; const d = toDisp(s.p90);
+      go ? ctx.lineTo(px(i),py(d)) : (ctx.moveTo(px(i),py(d)), go = true); });
+    for (let i = st.length-1; i >= 0; i--) if (st[i].p10 != null) ctx.lineTo(px(i), py(toDisp(st[i].p10)));
     ctx.closePath(); ctx.fillStyle = "rgba(100,116,139,.09)"; ctx.fill();
 
     const alpha = series.length > 90 ? 0.12 : 0.19;
@@ -284,7 +289,8 @@ window.__ENSEMBLE__ = (function () {
     series.forEach(s => {
       ctx.strokeStyle = hexA(s.color, alpha);
       ctx.beginPath(); let g2 = false;
-      s.arr.forEach((v,i) => { if (v == null) return; g2 ? ctx.lineTo(px(i),py(v)) : (ctx.moveTo(px(i),py(v)), g2 = true); });
+      s.arr.forEach((v,i) => { if (v == null) return; const d = toDisp(v);
+        g2 ? ctx.lineTo(px(i),py(d)) : (ctx.moveTo(px(i),py(d)), g2 = true); });
       ctx.stroke();
     });
 
@@ -295,22 +301,24 @@ window.__ENSEMBLE__ = (function () {
       means[m.id] = line;
       ctx.strokeStyle = m.color; ctx.lineWidth = 1.5;
       ctx.beginPath(); let g3 = false;
-      line.forEach((v,i) => { if (v == null) return; g3 ? ctx.lineTo(px(i),py(v)) : (ctx.moveTo(px(i),py(v)), g3 = true); });
+      line.forEach((v,i) => { if (v == null) return; const d = toDisp(v);
+        g3 ? ctx.lineTo(px(i),py(d)) : (ctx.moveTo(px(i),py(d)), g3 = true); });
       ctx.stroke();
     });
 
     ctx.strokeStyle = cssVar("--ink"); ctx.lineWidth = 2.2;
     ctx.beginPath(); let g4 = false;
-    st.forEach((s,i) => { if (s.mean == null) return; g4 ? ctx.lineTo(px(i),py(s.mean)) : (ctx.moveTo(px(i),py(s.mean)), g4 = true); });
+    st.forEach((s,i) => { if (s.mean == null) return; const d = toDisp(s.mean);
+      g4 ? ctx.lineTo(px(i),py(d)) : (ctx.moveTo(px(i),py(d)), g4 = true); });
     ctx.stroke();
 
     hookTip(cv, t.length, px, i => {
       let out = t[i].toLocaleString("en-GB",{weekday:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}) +
-                "\nALL      " + st[i].mean.toFixed(dec) + unit +
-                "\n10–90%   " + st[i].p10.toFixed(dec) + " – " + st[i].p90.toFixed(dec) + unit;
+                "\nALL      " + toDisp(st[i].mean).toFixed(dec) + unit +
+                "\n10–90%   " + toDisp(st[i].p10).toFixed(dec) + " – " + toDisp(st[i].p90).toFixed(dec) + unit;
       enabled().forEach(m => {
         const v = means[m.id] && means[m.id][i];
-        if (v != null) out += "\n" + (m.short + "        ").slice(0,8) + " " + v.toFixed(dec) + unit;
+        if (v != null) out += "\n" + (m.short + "        ").slice(0,8) + " " + toDisp(v).toFixed(dec) + unit;
       });
       return out;
     });
@@ -619,10 +627,11 @@ window.__ENSEMBLE__ = (function () {
   }
 
   function renderAll() {
-    spaghetti("ensTemp", "temperature_2m", "°", 1, "ensLegend");
+    spaghetti("ensTemp", "temperature_2m", U.tempUnit, 1, "ensLegend", U.axisTemp);
     rainChart();
-    spaghetti("ensWind", "wind_speed_10m", "", 0);
-    spaghetti("ensPres", "pressure_msl", "", 0);
+    spaghetti("ensWind", "wind_speed_10m", " " + U.windUnit, 0);
+    spaghetti("ensPres", "pressure_msl", " " + U.presUnit, U.presUnit === "inHg" ? 2 : 0, null,
+              v => U.presUnit === "inHg" ? U.conv.mb2inhg(v) : v);
     renderDayTable();
     renderAnalysis();
   }

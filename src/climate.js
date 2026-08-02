@@ -304,14 +304,17 @@ window.__CLIMATE__ = (function () {
     $("clCumTitle").textContent =
       "Cumulative rainfall " + s.curY + " against the " + BASE_FROM + "–" + BASE_TO + " normal";
 
+    /* cumulative curves are [dayIndex, mm]; convert the value, keep the index */
+    const cv = arr => (arr || []).map(pt => [pt[0], U.axisRain(pt[1])]);
+
     const series = [
-      { name: BASE_FROM + "–" + BASE_TO + " normal", data: s.cumNormal, color: "#64748b",
+      { name: BASE_FROM + "–" + BASE_TO + " normal", data: cv(s.cumNormal), color: "#64748b",
         dashStyle: "ShortDash", lineWidth: 2, zIndex: 3 },
-      { name: s.curY, data: s.cumThisYear, color: "#dc2626", lineWidth: 3, zIndex: 5 }
+      { name: s.curY, data: cv(s.cumThisYear), color: "#dc2626", lineWidth: 3, zIndex: 5 }
     ];
-    if (s.cumDriest) series.push({ name: "Driest year (" + s.driestYear + ")", data: s.cumDriest,
+    if (s.cumDriest) series.push({ name: "Driest year (" + s.driestYear + ")", data: cv(s.cumDriest),
       color: "#f59e0b", lineWidth: 1, dashStyle: "Dot", zIndex: 2 });
-    if (s.cumWettest) series.push({ name: "Wettest year (" + s.wettestYear + ")", data: s.cumWettest,
+    if (s.cumWettest) series.push({ name: "Wettest year (" + s.wettestYear + ")", data: cv(s.cumWettest),
       color: "#2563eb", lineWidth: 1, dashStyle: "Dot", zIndex: 1 });
 
     // x axis is a synthetic day index ((month-1)*31 + day) so every year
@@ -335,9 +338,9 @@ window.__CLIMATE__ = (function () {
       yAxis: { title: { text: U.rainUnit }, min: 0 },
       tooltip: { shared: true, valueSuffix: " " + U.rainUnit, valueDecimals: 1 },
       series: [
-        { name: "Normal", data: mCats.map((_,i) => s.monthlyNormal[i+1] != null ? +s.monthlyNormal[i+1].toFixed(1) : null),
+        { name: "Normal", data: mCats.map((_,i) => s.monthlyNormal[i+1] != null ? +U.axisRain(s.monthlyNormal[i+1]).toFixed(2) : null),
           color: "#cbd5e1" },
-        { name: String(s.curY), data: mCats.map((_,i) => s.monthlyThisYear[i+1] != null ? +s.monthlyThisYear[i+1].toFixed(1) : null),
+        { name: String(s.curY), data: mCats.map((_,i) => s.monthlyThisYear[i+1] != null ? +U.axisRain(s.monthlyThisYear[i+1]).toFixed(2) : null),
           color: "#2563eb" }
       ]
     });
@@ -348,9 +351,9 @@ window.__CLIMATE__ = (function () {
       yAxis: { title: { text: U.tempUnit } },
       tooltip: { shared: true, valueSuffix: " " + U.tempUnit, valueDecimals: 1 },
       series: [
-        { name: "Normal max", data: mCats.map((_,i) => s.tmaxNormal[i+1] != null ? +s.tmaxNormal[i+1].toFixed(1) : null),
+        { name: "Normal max", data: mCats.map((_,i) => s.tmaxNormal[i+1] != null ? +U.axisTemp(s.tmaxNormal[i+1]).toFixed(1) : null),
           color: "#cbd5e1" },
-        { name: String(s.curY) + " mean max", data: mCats.map((_,i) => s.tmaxThisYear[i+1] != null ? +s.tmaxThisYear[i+1].toFixed(1) : null),
+        { name: String(s.curY) + " mean max", data: mCats.map((_,i) => s.tmaxThisYear[i+1] != null ? +U.axisTemp(s.tmaxThisYear[i+1]).toFixed(1) : null),
           color: "#dc2626" }
       ]
     });

@@ -62,16 +62,10 @@ window.U = (function () {
 
     tempUnit, rainUnit, presUnit, windUnit,
 
-    /* Open-Meteo can return imperial directly, which keeps the numbers the
-       API sends consistent with what we display. Metric is still what we
-       compute with, so these are only used where a raw passthrough is safe. */
-    apiParams: function () {
-      const p = [];
-      if (isF) p.push("temperature_unit=fahrenheit");
-      if (isIn) p.push("precipitation_unit=inch");
-      p.push("wind_speed_unit=" + WIND);
-      return p.join("&");
-    },
+    /* NOTE: there is deliberately no helper for asking the API for imperial
+       units. Everything must arrive metric, because every threshold, ranking
+       and confidence rating in the project is written in metric. Convert at
+       the point of display and nowhere else. */
 
     /* ── a temperature ────────────────────────────────────────────────── */
     t: function (c, dp) {

@@ -763,8 +763,8 @@
         {lbl:'UV index', val:uv, unit:'', note:uvBand, uv:true},
         {lbl:'Solar radiation', val:Math.round(num('radiation_Wpm2')), unit:'W/m²', note:'Shortwave'},
         {lbl:'Cloud base', val:cloud>=1000?(cloud/1000).toFixed(1):cloud, unit:cloud>=1000?'km':'m', note:'Est. LCL'},
-        {lbl:'Rain today', val:r1(num('dayRain_mm')), unit:'mm', note:`Rate ${r1(num('rainRate_mm_per_hour'))} mm/h`, isRain: activeRainToday},
-        {lbl:'Storm rain', val:r1(num('stormRain')), unit:'mm', note:'Storm total', isRain: activeStormRain},
+        {lbl:'Rain today', val: U.rv(num('dayRain_mm')), unit:U.rainUnit, note:`Rate ${r1(num('rainRate_mm_per_hour'))} mm/h`, isRain: activeRainToday},
+        {lbl:'Storm rain', val:r1(num('stormRain')), unit:U.rainUnit, note:'Storm total', isRain: activeStormRain},
         {lbl:'PM2.5', val:pm25Val===null?'--':pm25Val, unit:'µg/m³', note:'AirGradient'},
         {lbl:'Air quality', val:aqiVal===null?'--':aqiVal, unit:'', note:aqiNote, aqi:true},
         {lbl:'Lightning', val:liveLightningCount===null?'--':Math.round(liveLightningCount), unit:'', note: liveLightningDistance===null ? 'Strikes detected · Blitzortung' : `Nearest ${r1(liveLightningDistance)} km away`}
