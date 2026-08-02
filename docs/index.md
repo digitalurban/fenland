@@ -80,6 +80,12 @@ The weeWX charts you'd expect — temperature, wind, rain, barometer, air qualit
 — plus a wind rose computed in the browser from your own direction and speed
 data, and solar radiation and UV if your station reports them.
 
+These two tabs read the chart JSON published by the
+[Belchertown skin](https://github.com/poblabs/weewx-belchertown) (`day.json`,
+`week.json`, `weewx.json` and so on). If you don't run Belchertown they stay
+empty and the other three tabs work exactly as normal — Fenland doesn't
+duplicate work that skin already does well.
+
 Every series is colour-banded by value: temperature on a cold-to-hot scale, wind
 on Beaufort colours, AQI on the standard bands.
 
@@ -108,8 +114,9 @@ from `file://` pages, so nothing can reach the APIs. It has to be served over
 http, even locally.
 
 Without a `station` block you get the forecast, ensemble and climate tabs
-working from Open-Meteo alone. Add one and the dashboard, history and stats come
-alive. See [weewx/README.md](weewx/README.md) for what weeWX needs to publish.
+working from Open-Meteo alone — no weather station required. Add one and the
+dashboard comes alive from MQTT or a polled JSON file; add Belchertown's chart
+JSON and the history and stats tabs fill in too. See [weewx/README.md](weewx/README.md) for what weeWX needs to publish.
 
 ### Hosting on GitHub Pages
 
@@ -314,7 +321,15 @@ No other dependencies. No build step, no npm, no framework.
 
 ## Credits
 
-Built on top of [weeWX](https://weewx.com) and the JSON output of the
-[Belchertown skin](https://github.com/poblabs/weewx-belchertown), which remains
-the best place to start if you want a complete weather site rather than this
-one's particular obsessions.
+Built on [weeWX](https://weewx.com), which does the real work of talking to the
+hardware and keeping the archive.
+
+The History and Stats tabs read the JSON published by the
+[Belchertown skin](https://github.com/poblabs/weewx-belchertown) rather than
+reinventing it. Belchertown is the more established skin and worth your time
+either way — the two coexist happily, and if you would rather keep your existing
+site and take only the Forecast, Ensemble and Climate panels, that is a
+documented path: see [weewx/README.md](weewx/README.md).
+
+Weather data from [Open-Meteo](https://open-meteo.com), whose free, keyless,
+attribution-only API is the reason a project like this can exist at all.
