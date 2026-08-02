@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Fenland</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/dashboard.css">
+<link rel="stylesheet" href="css/panels.css">
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
+</head>
+<body>
+
+  <div class="mobile-container" id="mobileLayout"></div>
+  <div class="desktop-only-scaler" id="scaler">
+    <div class="frame">
+      <div class="tick tl"></div>
+      <div class="tick tr"></div>
+      <div class="tick bl"></div>
+      <div class="tick br"></div>
+      <header class="head">
+        <div class="brand">
+          <div class="name" id="stationName">Weather Station</div>
+          <div class="coords" id="stationCoords">—</div>
+        </div>
+        <div class="clock">
+          <div class="time" id="clockTime">—:—</div>
+          <div class="dateline" id="clockDate">——</div>
+        </div>
+      </header>
+      <section class="hero">
+        <div class="hero-top">
+          <div class="hero-glyph" id="heroGlyph"></div>
+          <div class="hero-temp"><span id="airTemp">--</span><span class="deg">°C</span></div>
+        </div>
+        <div class="hero-cond" id="condition">Connecting...</div>
+        <div class="hero-extremes">
+          <span class="hi-t">MAX <span id="tempMax">--</span>°C</span>
+          <span class="lo-t">MIN <span id="tempMin">--</span>°C</span>
+          <span class="trend-inline"><span id="tempTrendArrow">→</span> <span id="tempTrendState">STEADY</span><span id="tempTrendRate">—</span></span>
+        </div>
+        <div class="hero-sub">
+          <div class="cell"><div class="lbl">Feels like</div><div class="val"><span id="feelsLike">--</span><span class="u">°C</span></div></div>
+          <div class="cell"><div class="lbl">Dew point</div><div class="val"><span id="dewPoint">--</span><span class="u">°C</span></div></div>
+          <div class="cell"><div class="lbl">Humidex</div><div class="val"><span id="humidex">--</span><span class="u">°C</span></div></div>
+        </div>
+      </section>
+      <section class="baro">
+        <div class="baro-head">
+          <div>
+            <div class="eyebrow">Barometric pressure</div>
+            <div class="baro-read">
+              <span class="now" id="baroNow">----</span><span class="unit">mb · sea level</span>
+              <span class="trend-inline baro-trend-inline"><span id="tendArrow">→</span> <span id="tendState">STEADY</span> <span id="tendRate">0.0 mb / 3h</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="baro-chart"><svg id="baroSvg" viewBox="0 0 960 360" preserveAspectRatio="none"></svg></div>
+        <div class="nowcast">
+          <div>
+            <div class="nc-lbl">Tendency forecast · next 6–12 h</div>
+            <div class="nc-txt" id="nowcastText">—</div>
+          </div>
+        </div>
+      </section>
+      <section class="wind">
+        <div class="wind-dials" id="windDials">
+          <div class="compass"><svg id="speedSvg" viewBox="0 0 480 480"></svg></div>
+          <div class="compass"><svg id="compassSvg" viewBox="0 0 480 480"></svg></div>
+        </div>
+        <div class="wind-readout-row">
+          <div class="wind-data-cell"><div class="lbl">Wind speed</div><div class="val"><span id="windSpeed">--</span><span class="u"> mph</span></div><div class="sub-txt" id="beaufort">—</div></div>
+          <div class="wind-data-cell"><div class="lbl">Direction</div><div class="val"><span id="windDir_text">--</span></div></div>
+          <div class="wind-data-cell"><div class="lbl">Gust profile</div><div class="val"><span id="windGust">--</span><span class="u"> mph</span></div></div>
+        </div>
+      </section>
+      <section class="tiles" id="tiles"></section>
+      <footer class="foot">
+        <span id="footSrc">SOURCE — MQTT weather feed</span>
+        <span id="footSun">SUNRISE —:— · SUNSET —:—</span>
+        <span id="footRefresh">REFRESH EVERY 15 MIN</span>
+        <span class="foot-action" id="detailsTrigger">HISTORY &amp; FORECAST ▸</span>
+      </footer>
+    </div>
+  </div>
+
+  <div class="detail-overlay" id="detailOverlay">
+    <div class="detail-topbar">
+      <div class="detail-tabs">
+        <button class="detail-tab active" id="tabBtnCharts">HISTORY</button>
+        <button class="detail-tab" id="tabBtnForecast">FORECAST</button>
+        <button class="detail-tab" id="tabBtnEnsemble">ENSEMBLE</button>
+        <button class="detail-tab" id="tabBtnStats">STATS</button>
+        <button class="detail-tab" id="tabBtnClimate">CLIMATE</button>
+      </div>
+      <div class="detail-close" id="detailCloseBtn">✕ CLOSE</div>
+    </div> 
+    <div class="detail-pane active" id="paneCharts">
+      <div class="chart-timespan-switch" id="chartSpanSwitch">
+        <button data-span="day" class="active">DAY</button>
+        <button data-span="week">WEEK</button>
+        <button data-span="month">MONTH</button>
+        <button data-span="year">YEAR</button>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card"><div class="chart-card-title">Temperature &amp; Humidity</div><div class="chart-card-body" id="chartTemp"><div class="chart-loading">Loading…</div></div></div>
+        <div class="chart-card"><div class="chart-card-title">Wind</div><div class="chart-card-body" id="chartWind"><div class="chart-loading">Loading…</div></div></div>
+        <div class="chart-card"><div class="chart-card-title">Rain</div><div class="chart-card-body" id="chartRain"><div class="chart-loading">Loading…</div></div></div>
+        <div class="chart-card"><div class="chart-card-title">Barometer</div><div class="chart-card-body" id="chartBaro"><div class="chart-loading">Loading…</div></div></div>
+        <!-- AIR GRADIENT HISTORICAL CHART CARD -->
+        <div class="chart-card"><div class="chart-card-title">Air Quality (PM2.5 &amp; AQI)</div><div class="chart-card-body" id="chartAirQuality"><div class="chart-loading">Loading…</div></div></div>
+      </div>
+    </div> 
+    <div class="detail-pane" id="paneForecast">
+      <div class="forecast-hourly" id="forecastHourly"><div class="chart-loading">Loading…</div></div>
+      <div class="forecast-daily" id="forecastDaily"></div>
+      <div id="fc2">
+        <div class="fc-statusbar">
+          <div class="fc-status" id="fcStatus">Forecast will load when this tab is opened.</div>
+          <button class="fc-refresh" id="fcRefresh">↻ REFRESH</button>
+        </div>
+        <div class="fc-stack">
+          <div class="chart-card">
+            <div class="chart-card-title">In summary</div>
+            <div class="ens-analysis" id="fcSummary"></div>
+          </div>
+
+          <div class="fc-now" id="fcNow"></div>
+
+          <div class="chart-card">
+            <div class="chart-card-title" id="fcChartTitle">Hourly · temperature, feels-like, rainfall &amp; probability</div>
+            <div class="chart-timespan-switch" id="fcSpan">
+              <button data-h="48" class="active">48 HOURS</button>
+              <button data-h="120">5 DAYS</button>
+              <button data-h="384">16 DAYS</button>
+            </div>
+            <div class="chart-card-body" id="fcChart" style="height:300px"><div class="chart-loading">Loading…</div></div>
+            <div class="fc-tempkey" id="fcTempKey"></div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-title" id="fcHoursTitle">Hour by hour</div>
+            <div class="fc-hours" id="fcHours"></div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-title">Fourteen days · tap a day for the full detail</div>
+            <div class="fc-days" id="fcDays"></div>
+            <div class="fc-detail" id="fcDetail"></div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-title">Forecast vs ensemble · is this a mainstream solution?</div>
+            <div id="fcCross"><div class="chart-loading">Waiting for ensemble data…</div></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Forecast accuracy · how this station's forecasts have actually performed</div>
+            <div id="vfBody"><div class="chart-loading">Loading…</div></div>
+          </div>
+        </div>
+        <div class="ens-note">
+          SOURCE — OPEN-METEO BEST-MATCH FORECAST · HOURLY TO 16 DAYS · CROSS-CHECKED AGAINST THE POOLED MULTI-MODEL ENSEMBLE<br>
+          BEST-MATCH BLENDS THE HIGHEST-RESOLUTION MODEL AVAILABLE FOR THIS LOCATION. IT IS STILL ONE SOLUTION OUT OF MANY —
+          WHERE IT SITS INSIDE THE ENSEMBLE SPREAD TELLS YOU HOW MUCH TO TRUST IT.
+        </div>
+      </div>
+    </div> 
+    <div class="detail-pane" id="paneStats">
+      <div class="stats-asof" id="statsAsOf">—</div>
+      <div id="statsTableWrap"><div class="chart-loading">Loading…</div></div>
+    </div>
+
+    <div class="detail-pane" id="paneEnsemble">
+      <div class="ens-bar">
+        <div class="ens-models" id="ensModels"></div>
+        <div class="chart-timespan-switch" id="ensHorizon" style="margin-bottom:0">
+          <button data-n="3" class="active">3 DAY</button>
+          <button data-n="7">7 DAY</button>
+          <button data-n="10">10 DAY</button>
+        </div>
+      </div>
+      <div class="ens-status" id="ensStatus">Ensemble data will load when this tab is opened.</div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-card-title">Temperature — every member</div>
+          <div class="ens-chart"><canvas id="ensTemp"></canvas></div>
+          <div class="ens-legend" id="ensLegend"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Rainfall — daily total &amp; probability</div>
+          <div class="ens-chart"><canvas id="ensRain"></canvas></div>
+          <div class="ens-legend"><span><i style="background:var(--faint);height:7px"></i>90th percentile</span><span><i style="background:var(--highlight);height:7px"></i>Pooled mean</span><span><i style="background:var(--ink)"></i>% members wet</span></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Wind speed — every member</div>
+          <div class="ens-chart"><canvas id="ensWind"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Pressure — every member</div>
+          <div class="ens-chart"><canvas id="ensPres"></canvas></div>
+        </div>
+      </div>
+      <div class="ens-stack">
+        <div class="chart-card">
+          <div class="chart-card-title">Written analysis · next <span id="ensHorizonLabel">3</span> days</div>
+          <div class="ens-kpis" id="ensKpis"></div>
+          <div class="ens-analysis" id="ensAnalysis"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Model comparison</div>
+          <div id="ensModelTable"><div class="chart-loading">Loading…</div></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Day by day · all models pooled · mean, 10–90% range and full member envelope</div>
+          <div id="ensDayTable"><div class="chart-loading">Loading…</div></div>
+        </div>
+      </div>
+      <div class="ens-note">
+        SOURCE — OPEN-METEO OPEN ENSEMBLE API · ECMWF · NOAA GEFS · DWD ICON · ECCC GEPS · BOM ACCESS-GE<br>
+        ANALYSIS IS GENERATED FROM THE LIVE MEMBER SPREAD ON EACH LOAD — IT IS NOT A HUMAN FORECAST. BEYOND DAY 7 READ IT AS PATTERN, NOT DETAIL.
+      </div>
+    </div>
+
+    <div class="detail-pane" id="paneClimate">
+      <div class="cl-statusbar">
+        <div class="cl-status" id="clStatus">Climatology will load when this tab is opened.</div>
+        <button class="fc-refresh" id="clRefresh">↻ REFRESH</button>
+      </div>
+      <div class="cl-stack">
+        <div class="cl-hero" id="clHero"></div>
+
+        <div class="chart-card">
+          <div class="chart-card-title">Written analysis</div>
+          <div class="ens-analysis" id="clAnalysis"></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-title" id="clCumTitle">Rainfall so far this year against the long-run normal</div>
+          <div class="chart-card-body" id="clCumChart" style="height:320px"><div class="chart-loading">Loading…</div></div>
+        </div>
+
+        <div class="cl-cols">
+          <div class="chart-card">
+            <div class="chart-card-title">Month by month · this year vs 1991–2020</div>
+            <div class="chart-card-body" id="clMonthChart" style="height:260px"><div class="chart-loading">Loading…</div></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Temperature · monthly mean maximum vs normal</div>
+            <div class="chart-card-body" id="clTempChart" style="height:260px"><div class="chart-loading">Loading…</div></div>
+          </div>
+        </div>
+
+        <div class="cl-cols">
+          <div class="chart-card">
+            <div class="chart-card-title" id="clDriestMonthTitle">Driest on record</div>
+            <div id="clDriestMonth"><div class="chart-loading">Loading…</div></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Driest year to date on record</div>
+            <div id="clDriestYear"><div class="chart-loading">Loading…</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="cl-note">
+        SOURCE — OPEN-METEO ARCHIVE (ERA5 REANALYSIS) · DAILY VALUES BACK TO 1940 ·
+        BASELINE IS THE WMO STANDARD NORMAL PERIOD — SEE THE STATUS LINE ABOVE FOR THE EXACT SPAN<br>
+        ERA5 IS A GRIDDED REANALYSIS, NOT A GAUGE READING — IT WILL NOT MATCH A LOCAL STATION EXACTLY,
+        BUT IT IS CONSISTENT ACROSS EVERY YEAR OF RECORD, WHICH IS WHAT MAKES THE COMPARISON MEANINGFUL.
+      </div>
+    </div>
+  </div>
+
+<script src="config.js"></script>
+<script src="src/colours.js"></script>
+<script src="src/dashboard.js"></script>
+<script src="src/ensemble.js"></script>
+<script src="src/forecast.js"></script>
+<script src="src/climate.js"></script>
+<script src="src/verify-panel.js"></script>
+<script src="src/windrose.js"></script>
+<script src="src/solar.js"></script>
+</body>
+</html>

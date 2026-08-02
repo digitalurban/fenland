@@ -1,0 +1,47 @@
+    <div class="detail-pane" id="paneClimate">
+      <div class="cl-statusbar">
+        <div class="cl-status" id="clStatus">Climatology will load when this tab is opened.</div>
+        <button class="fc-refresh" id="clRefresh">↻ REFRESH</button>
+      </div>
+      <div class="cl-stack">
+        <div class="cl-hero" id="clHero"></div>
+
+        <div class="chart-card">
+          <div class="chart-card-title">Written analysis</div>
+          <div class="ens-analysis" id="clAnalysis"></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-title" id="clCumTitle">Rainfall so far this year against the long-run normal</div>
+          <div class="chart-card-body" id="clCumChart" style="height:320px"><div class="chart-loading">Loading…</div></div>
+        </div>
+
+        <div class="cl-cols">
+          <div class="chart-card">
+            <div class="chart-card-title">Month by month · this year vs 1991–2020</div>
+            <div class="chart-card-body" id="clMonthChart" style="height:260px"><div class="chart-loading">Loading…</div></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Temperature · monthly mean maximum vs normal</div>
+            <div class="chart-card-body" id="clTempChart" style="height:260px"><div class="chart-loading">Loading…</div></div>
+          </div>
+        </div>
+
+        <div class="cl-cols">
+          <div class="chart-card">
+            <div class="chart-card-title" id="clDriestMonthTitle">Driest on record</div>
+            <div id="clDriestMonth"><div class="chart-loading">Loading…</div></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-card-title">Driest year to date on record</div>
+            <div id="clDriestYear"><div class="chart-loading">Loading…</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="cl-note">
+        SOURCE — OPEN-METEO ARCHIVE (ERA5 REANALYSIS) · DAILY VALUES BACK TO 1940 ·
+        BASELINE IS THE WMO STANDARD NORMAL PERIOD — SEE THE STATUS LINE ABOVE FOR THE EXACT SPAN<br>
+        ERA5 IS A GRIDDED REANALYSIS, NOT A GAUGE READING — IT WILL NOT MATCH A LOCAL STATION EXACTLY,
+        BUT IT IS CONSISTENT ACROSS EVERY YEAR OF RECORD, WHICH IS WHAT MAKES THE COMPARISON MEANINGFUL.
+      </div>
+    </div>

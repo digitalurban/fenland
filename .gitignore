@@ -1,0 +1,24 @@
+# ── never commit these ───────────────────────────────────────────────────
+# scripts/config.py holds your FTP password. Once a password is in git
+# history it is there permanently — even if you delete it in a later commit.
+# If you think you have committed one, rotate it rather than rewriting
+# history.
+scripts/config.py
+
+# NOTE: config.js is deliberately NOT ignored. It contains only your location
+# and public URLs — everything in it is already visible in the page source —
+# and the GitHub Pages demo needs it to configure itself.
+
+# The accumulating verification record. Yours, not the repo's — and worth
+# backing up, since it cannot be regenerated.
+scripts/verify_history.json
+scripts/*.log
+scripts/temp_*.json
+
+# ── the usual ────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+.venv/
+env/

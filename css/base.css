@@ -1,0 +1,120 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   fenland — base styling
+
+   Provides the shared furniture the panels expect: colour variables, cards,
+   tables and the tab shell. Deliberately close to the Belchertown skin's
+   palette so the panels look native when embedded in an existing weeWX site
+   (Path B). For the standalone page (Path A) this is the whole design.
+
+   Everything is a CSS variable, so retheming is a matter of editing :root.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --ink: #1e293b;
+  --graphite: #475569;
+  --slate: #64748b;
+  --mist: #94a3b8;
+  --faint: #e2e8f0;
+  --wash: #f8fafc;
+  --paper: #ffffff;
+  --accent: #d97706;
+  --highlight: #2563eb;
+  --max-marker: #ef4444;
+  --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Menlo, monospace;
+  --sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: #f1f5f9;
+  font-family: var(--sans);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 22px 18px 60px; }
+
+/* ── page header ─────────────────────────────────────────────────────── */
+.site-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 14px; flex-wrap: wrap;
+  border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 16px;
+}
+.site-head h1 {
+  font-family: var(--mono); font-size: 22px; font-weight: 700;
+  letter-spacing: .18em; text-transform: uppercase;
+}
+.site-head .where { font-family: var(--mono); font-size: 12.5px; color: var(--slate); margin-top: 4px; }
+.site-head .clock { font-family: var(--mono); font-size: 13px; color: var(--slate); text-align: right; }
+
+/* ── tabs ────────────────────────────────────────────────────────────── */
+.detail-topbar { display: flex; justify-content: space-between; align-items: center;
+  gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+.detail-tabs { display: flex; gap: 8px; flex: 1 1 auto; min-width: 0;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.detail-tabs::-webkit-scrollbar { display: none; }
+.detail-tab {
+  font-family: var(--mono); font-size: 13px; letter-spacing: .1em; text-transform: uppercase;
+  padding: 9px 16px; border: 1px solid var(--ink); background: var(--paper);
+  cursor: pointer; color: var(--slate); flex: 0 0 auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.detail-tab.active { background: var(--ink); color: var(--paper); }
+
+.detail-pane { display: none; }
+.detail-pane.active { display: block; }
+.detail-pane > * { min-width: 0; }
+
+/* ── cards, charts, loading states ───────────────────────────────────── */
+.chart-card { border: 1px solid var(--faint); padding: 14px; background: var(--wash); }
+.chart-card-title {
+  font-family: var(--mono); font-size: 12px; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--slate); margin-bottom: 6px;
+}
+.chart-card-body { height: 240px; }
+.chart-loading { font-family: var(--mono); font-size: 12px; color: var(--mist);
+  padding: 20px; text-align: center; }
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.chart-grid > * { min-width: 0; }
+
+.chart-timespan-switch { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.chart-timespan-switch button {
+  font-family: var(--mono); font-size: 12px; letter-spacing: .1em; padding: 7px 14px;
+  border: 1px solid var(--faint); background: var(--wash); cursor: pointer;
+  color: var(--graphite); -webkit-tap-highlight-color: transparent;
+}
+.chart-timespan-switch button.active { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+
+/* ── tables ──────────────────────────────────────────────────────────── */
+.stats-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.stats-table { border-collapse: collapse; width: 100%; font-family: var(--mono);
+  font-size: 13px; min-width: 620px; background: var(--paper); }
+.stats-table th, .stats-table td { border: 1px solid var(--faint); padding: 9px 11px; text-align: center; }
+.stats-table th { background: var(--ink); color: var(--paper); text-transform: uppercase;
+  letter-spacing: .08em; font-size: 11px; font-weight: 700; }
+.stats-table td:first-child, .stats-table th:first-child {
+  text-align: left; background: var(--wash); font-weight: 700; color: var(--graphite); }
+.stats-table .stat-hi { color: var(--max-marker); font-weight: 600; }
+.stats-table .stat-lo { color: var(--highlight); }
+.stats-table .stat-at { display: block; font-size: 10px; color: var(--mist);
+  font-weight: 400; margin-top: 2px; }
+.overflow { overflow-x: auto; }
+
+/* ── footer ──────────────────────────────────────────────────────────── */
+.site-foot { font-family: var(--mono); font-size: 10.5px; color: var(--mist);
+  line-height: 1.7; margin-top: 26px; border-top: 1px solid var(--faint); padding-top: 14px; }
+.site-foot a { color: var(--slate); }
+
+/* ── responsive ──────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  .wrap { padding: 16px 12px 40px; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .chart-card-body { height: 210px; }
+  .stats-table th, .stats-table td { padding: 8px 9px; }
+}
+@media (max-width: 560px) {
+  .site-head h1 { font-size: 18px; }
+  .chart-card { padding: 12px; }
+  .chart-card-body { height: 190px; }
+}

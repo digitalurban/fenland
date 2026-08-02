@@ -1,0 +1,46 @@
+      <div id="fc2">
+        <div class="fc-statusbar">
+          <div class="fc-status" id="fcStatus">Forecast will load when this tab is opened.</div>
+          <button class="fc-refresh" id="fcRefresh">↻ REFRESH</button>
+        </div>
+        <div class="fc-stack">
+          <div class="chart-card">
+            <div class="chart-card-title">In summary</div>
+            <div class="ens-analysis" id="fcSummary"></div>
+          </div>
+
+          <div class="fc-now" id="fcNow"></div>
+
+          <div class="chart-card">
+            <div class="chart-card-title" id="fcChartTitle">Hourly · temperature, feels-like, rainfall &amp; probability</div>
+            <div class="chart-timespan-switch" id="fcSpan">
+              <button data-h="48" class="active">48 HOURS</button>
+              <button data-h="120">5 DAYS</button>
+              <button data-h="384">16 DAYS</button>
+            </div>
+            <div class="chart-card-body" id="fcChart" style="height:300px"><div class="chart-loading">Loading…</div></div>
+            <div class="fc-tempkey" id="fcTempKey"></div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-title" id="fcHoursTitle">Hour by hour</div>
+            <div class="fc-hours" id="fcHours"></div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-title">Fourteen days · tap a day for the full detail</div>
+            <div class="fc-days" id="fcDays"></div>
+            <div class="fc-detail" id="fcDetail"></div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-title">Forecast vs ensemble · is this a mainstream solution?</div>
+            <div id="fcCross"><div class="chart-loading">Waiting for ensemble data…</div></div>
+          </div>
+        </div>
+        <div class="ens-note">
+          SOURCE — OPEN-METEO BEST-MATCH FORECAST · HOURLY TO 16 DAYS · CROSS-CHECKED AGAINST THE POOLED MULTI-MODEL ENSEMBLE<br>
+          BEST-MATCH BLENDS THE HIGHEST-RESOLUTION MODEL AVAILABLE FOR THIS LOCATION. IT IS STILL ONE SOLUTION OUT OF MANY —
+          WHERE IT SITS INSIDE THE ENSEMBLE SPREAD TELLS YOU HOW MUCH TO TRUST IT.
+        </div>
+      </div>
