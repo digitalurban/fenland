@@ -112,6 +112,11 @@ entirely for metric.
 Note that this governs the *panels* only. Your own skin's dashboard will keep
 displaying whatever weeWX sends it — Fenland doesn't reach into your markup.
 
+If you also run Fenland's own dashboard (Path A), add `stationUnits` alongside
+this to declare what your loop packet contains. `units` is what you read;
+`stationUnits` is what arrives. Both default to metric. See the main
+[README](../README.md#configuration).
+
 ---
 
 ## Styling

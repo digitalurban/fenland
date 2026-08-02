@@ -1,7 +1,7 @@
 # Fenland
 
 A weather skin for [weeWX](https://weewx.com) — live dashboard, multi-model
-ensemble, 16-day forecast and 86 years of climatology.
+ensemble, 16-day forecast and climatology back to 1940.
 
 **[Live demo](https://digitalurban.github.io/fenland/)** ·
 [Install](#install) · [Configuration](#configuration) · [weeWX notes](weewx/README.md)
@@ -66,8 +66,8 @@ The written analysis is generated from the live spread on every load.
 
 ![Climate tab](docs/img/climate.jpg)
 
-86 years of ERA5 reanalysis for your coordinates, so the page can say how
-unusual today is rather than just what it is: *"the driest July in the 87 years
+ERA5 reanalysis from 1940 to today for your coordinates, so the page can say
+how unusual today is rather than just what it is: *"the driest July in the 87 years
 since 1940"*, *"no year since 1940 has been drier to this date"*. Cumulative
 rainfall against the 1991–2020 normal with the driest and wettest years for
 context, monthly anomalies, and ranked tables with the current year highlighted.
@@ -149,8 +149,10 @@ rebuilds, and weather data changing every five minutes will hit that limit.
 
 ## How it fits together
 
-No build step, no framework, no dependencies beyond Highcharts from a CDN.
-`index.html` loads a handful of independent files:
+No framework, no npm, nothing to compile before deploying. Three things load
+from a CDN: **Highcharts** for the charts, **mqtt.js** for the live feed, and
+**IBM Plex** from Google Fonts. Everything else is in the repo. `index.html`
+loads a handful of independent files:
 
 | File | Does |
 |---|---|
@@ -175,8 +177,11 @@ The page markup lives in `panes/` and `index.html` is assembled from it:
 python3 build.py        # after editing anything in panes/
 ```
 
-Editing `index.html` by hand works until you forget, at which point the two
-copies drift and a change silently fails to reach the site.
+To be clear about the apparent contradiction above: there is no build step to
+*install* Fenland — clone it, edit `config.js`, serve it. `build.py` only
+matters if you change the markup, and it exists because editing `index.html`
+directly works right up until you forget, at which point the two copies drift
+and a change silently fails to reach the site.
 
 ---
 
@@ -198,9 +203,11 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `mqtt` | no | Broker URL and topics — see below |
 | `pollSeconds` | no | JSON polling interval. Default 20 |
 | `station.*` | no | URLs of your weeWX JSON files |
+| `stationUnits` | no | What your station *publishes*, if not metric — see below |
 | `fields` | no | Loop-packet key names, if yours differ from the defaults |
 | `ensembleModels` | no | Which ensembles to pool |
 | `climate.baselineFrom/To` | no | Default 1991–2020, the WMO normal |
+| `climate.firstYear` | no | Start of the record. Default 1940, the ERA5 limit |
 
 Everything is computed internally in metric and converted only for display, so
 thresholds, rankings and confidence ratings stay consistent whichever units you
@@ -294,8 +301,9 @@ is also the demo — so if the demo is broken, so is the author's weather statio
   oddly.
 - **Forecast verification needs weeks before it says much.** That is inherent,
   not a defect, but do not judge the model league table on a fortnight.
-- **The dashboard assumes a metric loop packet.** See
-  [Live data](#live-data) — one line in `weewx.conf`, or remap with `fields`.
+- **Only Fahrenheit-style US units are handled on input.** `stationUnits`
+  covers °F, inHg, inches, cm, kPa and the four wind units. Anything more exotic
+  needs converting before it reaches the page.
 
 **On the list:**
 
@@ -327,7 +335,12 @@ free for personal and non-commercial use; commercial use needs a licence from
 Highsoft. Chart calls are isolated, so swapping in ECharts or uPlot (both MIT)
 is a contained job if that matters to you.
 
-No other dependencies. No build step, no npm, no framework.
+[mqtt.js](https://github.com/mqttjs/MQTT.js) is MIT. IBM Plex is SIL OFL. If
+you would rather not call Google Fonts, drop the two `fonts.googleapis.com`
+`<link>` tags from the header block in `build.py`, re-run it, and the page falls
+back to the system monospace stack.
+
+Nothing else, and nothing to compile.
 
 ---
 
