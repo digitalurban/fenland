@@ -270,20 +270,22 @@
       .nowcast .nc-lbl { font-size: calc(15 * var(--k)); letter-spacing: .22em; margin-bottom: calc(6 * var(--k)); font-family: var(--mono); text-transform: uppercase; color: var(--slate); }
       .nowcast .nc-txt { font-size: calc(34 * var(--k)); font-weight: 600; }
 
-      .wind { grid-area: wind; min-height: 0; overflow: hidden; border-top: 2px solid var(--faint); padding-top: calc(20 * var(--k)); border-right: 2px solid var(--faint); padding-right: calc(28 * var(--k)); display: flex; flex-direction: column; justify-content: center; gap: calc(20 * var(--k)); }
-      .wind-dials { display: flex; gap: calc(20 * var(--k)); justify-content: center; align-items: center; width: 100%; }
+      .wind { grid-area: wind; min-height: 0; border-top: 2px solid var(--faint); padding-top: calc(20 * var(--k)); border-right: 2px solid var(--faint); padding-right: calc(28 * var(--k)); display: flex; flex-direction: column; justify-content: center; gap: calc(20 * var(--k)); }
+      .wind-dials { display: flex; flex: 1 1 auto; min-height: 0; gap: calc(20 * var(--k)); justify-content: center; align-items: center; width: 100%; }
       .compass {
         flex: 1 1 0;                          /* share the row equally */
         width: auto;
-        max-width: calc(400 * var(--k));      /* but never beyond design size */
+        max-width: calc(400 * var(--k));      /* never beyond design size */
         min-width: 0;
+        aspect-ratio: 1 / 1;
+        max-height: 100%;                     /* yield to the readout below */
         height: auto;
       }
       .compass svg { width: 100%; height: auto; display: block; }
-      .wind-readout-row { border-top: 1.5px solid var(--wash); padding-top: calc(16 * var(--k)); display: flex; gap: calc(24 * var(--k)); width: 100%; }
+      .wind-readout-row { flex: 0 0 auto; border-top: 1.5px solid var(--wash); padding-top: calc(16 * var(--k)); display: flex; gap: calc(24 * var(--k)); width: 100%; }
       .wind-data-cell { flex: 1; text-align: center; }
       .wind-data-cell .lbl { font-size: calc(14 * var(--k)); letter-spacing: .20em; margin-bottom: calc(2 * var(--k)); font-family: var(--mono); text-transform: uppercase; color: var(--slate); }
-      .wind-data-cell .val { font-size: calc(48 * var(--k)); font-family: var(--mono); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+      .wind-data-cell .val { font-size: calc(48 * var(--k)); font-family: var(--mono); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.08; }
       .wind-data-cell .val .u { font-size: calc(20 * var(--k)); color: var(--slate); font-weight: 400; }
       .wind-data-cell .sub-txt { font-size: calc(19 * var(--k)); margin-top: calc(4 * var(--k)); font-weight: 600; color: var(--graphite); }
 
