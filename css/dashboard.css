@@ -94,7 +94,7 @@
          point so the pair reads as one unit. */
       .wind-data-cell.dir-cell { flex: 1.45; }
       .wind-data-cell .val { white-space: nowrap; }
-      .wind-data-cell .val .deg-num { font-size: .78em; color: var(--slate); margin-left: .18em; }
+      .wind-data-cell .val .deg-num { font-size: .78em; color: var(--ink); margin-left: .18em; }
     .wind-data-cell .lbl { font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--slate); }
     .wind-data-cell .val { font-family: var(--mono); font-weight: 600; font-size: 18px; }
     .wind-data-cell .val .u { font-size: 11px; color: var(--mist); }
@@ -300,7 +300,7 @@
          point so the pair reads as one unit. */
       .wind-data-cell.dir-cell { flex: 1.45; }
       .wind-data-cell .val { white-space: nowrap; }
-      .wind-data-cell .val .deg-num { font-size: .78em; color: var(--slate); margin-left: .18em; }
+      .wind-data-cell .val .deg-num { font-size: .78em; color: var(--ink); margin-left: .18em; }
       .wind-data-cell .lbl { font-size: calc(14 * var(--k)); letter-spacing: .20em; margin-bottom: calc(2 * var(--k)); font-family: var(--mono); text-transform: uppercase; color: var(--slate); }
       .wind-data-cell .val { font-size: calc(48 * var(--k)); font-family: var(--mono); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.08; }
       .wind-data-cell .val .u { font-size: calc(20 * var(--k)); color: var(--slate); font-weight: 400; }
