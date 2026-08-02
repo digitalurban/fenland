@@ -148,6 +148,7 @@ No build step, no framework, no dependencies beyond Highcharts from a CDN.
 | File | Does |
 |---|---|
 | `config.js` | Your settings. The only file you have to edit |
+| `index.html` | **Generated** by `build.py` from `panes/` — do not edit directly |
 | `src/units.js` | Converts metric internals into your chosen display units. **Loads first** — everything else formats through it |
 | `src/dashboard.js` | Live gauges, tiles and barograph, over MQTT or JSON polling |
 | `src/forecast.js` | Forecast tab |
@@ -160,6 +161,15 @@ No build step, no framework, no dependencies beyond Highcharts from a CDN.
 Each panel defines exactly one global, loads its own data lazily the first time
 its tab is opened, and fails quietly if its data source is missing. Deleting any
 of them removes that feature and breaks nothing else.
+
+The page markup lives in `panes/` and `index.html` is assembled from it:
+
+```bash
+python3 build.py        # after editing anything in panes/
+```
+
+Editing `index.html` by hand works until you forget, at which point the two
+copies drift and a change silently fails to reach the site.
 
 ---
 
