@@ -159,8 +159,12 @@
     const keys = Object.keys(data);
     if (keys.length < 3) return;              // not a real payload yet
     fieldsAudited = true;
+    /* windGust legitimately falls back to windGust10, so its absence is not a
+       fault — warning about it would be crying wolf on a working setup. */
+    const satisfied = name =>
+      name === "windGust" && data[FIELD.windGust10] !== undefined;
     const missing = Object.entries(FIELD)
-      .filter(([, key]) => data[key] === undefined)
+      .filter(([name, key]) => data[key] === undefined && !satisfied(name))
       .map(([name, key]) => name + " -> " + key);
     if (!missing.length) return;
     console.warn(
@@ -738,8 +742,22 @@
       if (!el || isNaN(targetAngle)) return; 
 
       let st = needleAnim[elementId];
+
+      /* The dial SVGs are rebuilt whenever the wind zoom overlay opens or the
+         layout switches between desktop and mobile. That creates a NEW node
+         with the same id, while the running animation still holds the old,
+         now-detached one — it animates an orphan forever, st.raf never clears,
+         and the guard below then returns early on every future call, leaving
+         the visible needle frozen at its starting angle while the numbers
+         beside it carry on updating. Detect the swap and start again on the
+         node that is actually on screen. */
+      if (st && st.el !== el) {
+        if (st.raf) cancelAnimationFrame(st.raf);
+        st = null;
+      }
+
       if (!st) {
-        st = needleAnim[elementId] = { angle: targetAngle, velocity: 0, target: targetAngle, raf: null };
+        st = needleAnim[elementId] = { el, angle: targetAngle, velocity: 0, target: targetAngle, raf: null };
         el.style.transform = `rotate(${targetAngle}deg)`;
         return;
       } 
@@ -757,11 +775,12 @@
         const accel = -NEEDLE_STIFFNESS * disp - NEEDLE_DAMPING * st.velocity;
         st.velocity += accel * dt;
         st.angle += st.velocity * dt;
-        el.style.transform = `rotate(${st.angle}deg)`; 
+        if (!st.el.isConnected) { st.raf = null; return; }   // node was replaced
+        st.el.style.transform = `rotate(${st.angle}deg)`; 
 
         if (Math.abs(disp) < 0.05 && Math.abs(st.velocity) < NEEDLE_REST_VEL) {
           st.angle = st.target;
-          el.style.transform = `rotate(${st.angle}deg)`;
+          st.el.style.transform = `rotate(${st.angle}deg)`;
           st.raf = null;
         } else {
           st.raf = requestAnimationFrame(step);
@@ -901,7 +920,7 @@
       const nowcastOutput = nowcast(nowMB, trend3h, wDeg ?? 0); 
 
       const wSpd=inWind(num(FIELD.windSpeed));
-      const wGust=data.windGust_mph?inWind(num(FIELD.windGust)):inWind(num(FIELD.windGust10));
+      const wGust=data[FIELD.windGust]!=null?inWind(num(FIELD.windGust)):inWind(num(FIELD.windGust10));
       const compass16=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
       const dirName = wDeg !== null ? compass16[Math.round(wDeg/22.5)%16] : null;
       const beauNames=['Calm','Light air','Light breeze','Gentle breeze','Moderate breeze','Fresh breeze','Strong breeze','Near gale','Gale','Strong gale','Storm','Violent storm','Hurricane'];
