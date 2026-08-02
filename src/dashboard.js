@@ -62,6 +62,27 @@
   const LIVE = (typeof window !== 'undefined' && window.__STATION__) ? window.__STATION__ : null;
 
 
+  /* ── barometric tendency forecast ────────────────────────────────────
+     A pressure-band + 3-hour-tendency rule with a wind-direction modifier —
+     the same family as the Negretti & Zambra barometer tables of the 1850s.
+
+     It is regional, and worth being honest about why. The band edges below
+     (1024 / 1012 / 1000 mb) are temperate-maritime values: in a continental
+     interior they are too narrow, and in the tropics sea-level pressure
+     barely moves, so a station there would sit in one band permanently.
+
+     The wind clause is sharper still. Easterly-through-southerly flow means
+     humid air only in the Northern Hemisphere; south of the equator the
+     circulation around a low runs the other way, so the sector is mirrored
+     about the east-west axis. The reversal is settled physics — the exact
+     sector is a heuristic in either hemisphere.
+
+     Set `nowcast: false` in config.js to hide the panel entirely.          */
+  const NOWCAST_ON = CFG.nowcast !== false;
+  const HUMID_SECTOR = (CFG.lat != null && CFG.lat < 0) ? [340, 110] : [70, 200];
+  const inSector = (deg, [a, b]) =>
+    a <= b ? (deg >= a && deg <= b) : (deg >= a || deg <= b);
+
   /* ── what YOUR STATION publishes ──────────────────────────────────────
      Separate from `units`, which is what the page DISPLAYS. A US station
      publishing °F, inHg and inches can be displayed in metric, and a metric
@@ -912,7 +933,7 @@
           else if(dP>=0.8) base='Showery, slowly improving';
           else base='Changeable, showers around';
         } else { base = dP<0 ? 'Unsettled and windy, rain' : 'Stormy, then clearing'; }
-        if(dP<-0.4 && (windDeg>=70 && windDeg<=200)) base += ' (humid)';
+        if(dP<-0.4 && inSector(windDeg, HUMID_SECTOR)) base += ' (humid)';
         return base;
       }
       const wDegRaw = parseFloat(data[FIELD.windDir]);
@@ -1061,6 +1082,7 @@
         document.getElementById('tempMin_mob').textContent = (liveTempMin === '--' ? liveTempMin : U.tv(liveTempMin));
         document.getElementById('tempMax_mob').textContent = (liveTempMax === '--' ? liveTempMax : U.tv(liveTempMax));
         labelUnits();   // the mobile layout is rebuilt on resize
+        applyNowcastSetting();
         renderCredit();
         document.getElementById('tempTrendArrow_mob').textContent = tempArrow;
         document.getElementById('tempTrendState_mob').textContent = tempState;
@@ -1226,6 +1248,20 @@
       });
     }
 
+    /* Hidden entirely when switched off; otherwise carries its own
+       explanation on hover / long-press rather than spending a row of the
+       layout on a caption. */
+    function applyNowcastSetting() {
+      const note = "Traditional barometer forecast: pressure, its 3-hour trend "
+        + "and wind direction. Calibrated for temperate maritime climates — "
+        + "less meaningful in continental interiors and unreliable in the tropics"
+        + ((CFG.lat != null && CFG.lat < 0) ? ". Wind sector mirrored for the Southern Hemisphere." : ".");
+      document.querySelectorAll(".nowcast").forEach(el => {
+        if (!NOWCAST_ON) { el.style.display = "none"; return; }
+        el.setAttribute("title", note);
+      });
+    }
+
     function labelUnits() {
       if (typeof U === "undefined") return;
       document.querySelectorAll(".wx-unit-temp").forEach(e => e.textContent = U.tempUnit);
@@ -1242,6 +1278,7 @@
 
       render();
       labelUnits();
+      applyNowcastSetting();
       renderCredit();
       wireDetailOverlay();
       window.addEventListener('resize', render);

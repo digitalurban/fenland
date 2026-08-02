@@ -210,12 +210,35 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `ensembleModels` | no | Which ensembles to pool |
 | `climate.baselineFrom/To` | no | Default 1991–2020, the WMO normal |
 | `climate.firstYear` | no | Start of the record. Default 1940, the ERA5 limit |
+| `nowcast` | no | Barometric tendency line. `false` hides it — see below |
 
 Everything is computed internally in metric and converted only for display, so
 thresholds, rankings and confidence ratings stay consistent whichever units you
 pick. Temperature differences (bias, anomaly, spread) convert correctly as
 differences rather than as temperatures — a −1.5 °C bias reads as −2.7 °F, not
 29.3 °F.
+
+### Barometric tendency
+
+The line under the barograph — *"Fair, becoming unsettled"* — comes from the
+pressure reading, its 3-hour trend and the wind direction. It's the same family
+as the Negretti & Zambra barometer tables of the 1850s, and it carries their
+assumptions with it.
+
+Those assumptions are regional. The band edges are temperate-maritime values,
+too narrow for a continental interior and close to useless in the tropics,
+where sea-level pressure hardly moves and a station would sit in one band all
+year. The wind rule — easterly through southerly meaning humid air — is
+Northern Hemisphere; south of the equator the circulation around a low runs the
+other way, so Fenland mirrors the sector automatically when `lat` is negative.
+The reversal is settled physics, but the sector itself is a heuristic in either
+hemisphere.
+
+The panel explains this on hover. If your climate isn't temperate maritime,
+`nowcast: false` removes it rather than leaving you a plausible-looking
+sentence that doesn't apply where you are.
+
+---
 
 ### Live data
 

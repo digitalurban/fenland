@@ -44,6 +44,21 @@ window.WXCONFIG = {
      project. It is how people find the skin — but set false to remove it. */
   credit: true,
 
+  /* ── barometric tendency forecast ───────────────────────────────────
+     The short "next 6-12 h" line under the barograph, worked out from the
+     pressure reading, its 3-hour trend and the wind direction — the same
+     family as the Negretti & Zambra barometer tables of the 1850s.
+
+     It is regional. The pressure bands are temperate-maritime values: too
+     narrow for a continental interior, and near-useless in the tropics,
+     where sea-level pressure barely moves. The wind rule is Northern
+     Hemisphere by default and mirrors automatically when `lat` is negative,
+     because circulation around a low reverses south of the equator.
+
+     If your climate is not temperate maritime, consider turning it off
+     rather than trusting it.                                              */
+  // nowcast: true,
+
   /* ── hardware label ─────────────────────────────────────────────────
      Shown in the header after the coordinates, e.g. "DAVIS VANTAGE".     */
   hardware: "DAVIS VANTAGE",
