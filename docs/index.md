@@ -191,6 +191,7 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `mqtt` | no | Broker URL and topics — see below |
 | `pollSeconds` | no | JSON polling interval. Default 20 |
 | `station.*` | no | URLs of your weeWX JSON files |
+| `fields` | no | Loop-packet key names, if yours differ from the defaults |
 | `ensembleModels` | no | Which ensembles to pool |
 | `climate.baselineFrom/To` | no | Default 1991–2020, the WMO normal |
 
@@ -210,6 +211,21 @@ anything in `config.js` is public.
 
 **JSON polling** needs no broker at all: weeWX writes the loop packet to a file,
 the page fetches it on a timer. Slower, but far easier to set up.
+
+Either way the payload must be **metric** — °C, mm, mbar — whatever units you
+display in, because Fenland computes in metric and converts only at the point
+of display. One line in `weewx.conf` does it:
+
+```
+[[MQTT]]
+    unit_system = METRICWX
+    append_units_label = True
+```
+
+That also produces the field names Fenland expects by default (`outTemp_C`,
+`windSpeed_mph` and so on). If you can't change what your station publishes —
+because Home Assistant or something else reads the same topic — remap the names
+with `fields` in `config.js` instead.
 
 With both configured, MQTT is used and polling waits in reserve — if the broker
 goes unreachable for 90 seconds, the page falls back rather than sitting dead.

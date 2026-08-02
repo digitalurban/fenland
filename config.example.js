@@ -71,6 +71,29 @@ window.WXCONFIG = {
   /* How often to poll, in seconds, when using the JSON fallback.         */
   pollSeconds: 20,
 
+  /* ── loop packet field names ────────────────────────────────────────
+     Only needed if your MQTT payload uses different keys. Defaults match
+     weewx-mqtt with `append_units_label = True` publishing METRICWX.
+
+     IMPORTANT: the values must be metric — °C, mm, mbar — regardless of
+     what you display in. Fenland converts for display only. In weewx.conf:
+
+         [[MQTT]]
+             unit_system = METRICWX
+             append_units_label = True
+
+     Override only the names that differ:                                */
+  // fields: {
+  //   temp: "outTemp_C",   appTemp: "appTemp_C",  dewpoint: "dewpoint_C",
+  //   humidex: "humidex_C", inTemp: "inTemp_C",   inHumidity: "inHumidity",
+  //   outHumidity: "outHumidity", barometer: "barometer_mbar",
+  //   windSpeed: "windSpeed_mph", windGust: "windGust_mph",
+  //   windGust10: "windGust10",   windDir: "windDir",
+  //   dayRain: "dayRain_mm",      stormRain: "stormRain",
+  //   rainRate: "rainRate_mm_per_hour", radiation: "radiation_Wpm2",
+  //   uv: "UV", cloudbase: "cloudbase_meter", beaufort: "beaufort_count"
+  // },
+
   /* ── optional: your own weather station ─────────────────────────────
      Leave the whole `station` block out and the panels still work — you
      simply get forecast, ensemble and climate with no station comparison.

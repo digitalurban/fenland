@@ -61,6 +61,45 @@
   const HISTORY_REFRESH_MS = 5 * 60 * 1000;
   const LIVE = (typeof window !== 'undefined' && window.__STATION__) ? window.__STATION__ : null;
 
+  /* ── loop packet field names ──────────────────────────────────────────
+     The keys Fenland looks for in the MQTT payload (or the polled JSON). The
+     defaults match weewx-mqtt with `append_units_label = True` publishing
+     METRICWX.
+
+     Values must be METRIC — °C, mm, mbar — whatever units you display in.
+     Fenland computes in metric and converts only for display, so a station
+     publishing °F would be misread. One line in weewx.conf handles it:
+
+         [[MQTT]]
+             unit_system = METRICWX
+             append_units_label = True
+
+     If you cannot change what your station publishes — because Home Assistant
+     or something else consumes the same topic — override the names below in
+     config.js instead. Only list the ones that differ.                     */
+  const FIELD = Object.assign({
+    temp:        "outTemp_C",
+    appTemp:     "appTemp_C",
+    dewpoint:    "dewpoint_C",
+    humidex:     "humidex_C",
+    inTemp:      "inTemp_C",
+    inHumidity:  "inHumidity",
+    outHumidity: "outHumidity",
+    barometer:   "barometer_mbar",
+    windSpeed:   "windSpeed_mph",
+    windGust:    "windGust_mph",
+    windGust10:  "windGust10",
+    windDir:     "windDir",
+    dayRain:     "dayRain_mm",
+    stormRain:   "stormRain",
+    rainRate:    "rainRate_mm_per_hour",
+    radiation:   "radiation_Wpm2",
+    uv:          "UV",
+    cloudbase:   "cloudbase_meter",
+    beaufort:    "beaufort_count"
+  }, CFG.fields || {});
+
+
   /* "52.61° N · 0.39° E · 15M ASL — DAVIS VANTAGE · MQTT" assembled from config */
   function stationSubtitle() {
     const bits = [];
@@ -322,13 +361,13 @@
 
         if (hourlyEl) {
           hourlyEl.innerHTML = hourly.slice(0, 12).map(p => {
-            const hr = new Date(p.timestamp * 1000).toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', hour12: false });
+            const hr = new Date(p.timestamp * 1000).toLocaleTimeString('en-GB', { timeZone: (CFG.timezone || 'Europe/London'), hour: '2-digit', hour12: false });
             return `<div class="forecast-hour"><div class="fh-time">${hr}</div><div class="fh-glyph">${forecastGlyphSvg(p.weatherPrimary, p.isDay)}</div><div class="fh-temp">${Math.round(p.tempC)}°</div></div>`;
           }).join('');
         }
         if (dailyEl) {
           dailyEl.innerHTML = daily.map(p => {
-            const dayName = new Date(p.timestamp * 1000).toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'short' }).toUpperCase();
+            const dayName = new Date(p.timestamp * 1000).toLocaleDateString('en-GB', { timeZone: (CFG.timezone || 'Europe/London'), weekday: 'short' }).toUpperCase();
             return `<div class="forecast-day"><div class="fd-name">${dayName}</div><div class="fd-glyph">${forecastGlyphSvg(p.weatherPrimary, true)}</div><div class="fd-hi">${Math.round(p.maxTempC)}°</div><div class="fd-lo">${Math.round(p.minTempC)}°</div><div class="fd-pop">${Math.round(p.pop)}% rain</div></div>`;
           }).join('');
         }
@@ -637,11 +676,11 @@
       const num = (k,d=0)=>{const v=parseFloat(data[k]); return isNaN(v)?d:v;};
       const r1 = v=>Math.round(v*10)/10;
       const nowObj = new Date();
-      const timeStr = nowObj.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false });
-      const dateStr = nowObj.toLocaleDateString('en-GB', { timeZone: 'Europe/London', weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase(); 
+      const timeStr = nowObj.toLocaleTimeString('en-GB', { timeZone: (CFG.timezone || 'Europe/London'), hour: '2-digit', minute: '2-digit', hour12: false });
+      const dateStr = nowObj.toLocaleDateString('en-GB', { timeZone: (CFG.timezone || 'Europe/London'), weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase(); 
 
       const sunTimes = getSunTimes(nowObj, STATION_LAT, STATION_LON);
-      const fmtSun = t => t ? t.toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hour12: false }) : '—:—';
+      const fmtSun = t => t ? t.toLocaleTimeString('en-GB', { timeZone: (CFG.timezone || 'Europe/London'), hour: '2-digit', minute: '2-digit', hour12: false }) : '—:—';
       const sunText = `SUNRISE ${fmtSun(sunTimes.sunrise)} · SUNSET ${fmtSun(sunTimes.sunset)}`; 
 
       let statusText, statusColor;
@@ -649,28 +688,28 @@
       if (mqttStatus === 'connecting') { statusText = 'CONNECTING…'; statusColor = 'var(--slate)'; }
       else if (mqttStatus === 'reconnecting') { statusText = 'RECONNECTING…'; statusColor = 'var(--max-marker)'; }
       else if (mqttStatus === 'offline') {
-        statusText = lastMsgTime ? `OFFLINE · LAST UPDATE ${new Date(lastMsgTime).toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour12: false })}` : 'OFFLINE';
+        statusText = lastMsgTime ? `OFFLINE · LAST UPDATE ${new Date(lastMsgTime).toLocaleTimeString('en-GB', { timeZone: (CFG.timezone || 'Europe/London'), hour12: false })}` : 'OFFLINE';
         statusColor = 'var(--max-marker)';
       } else if (secsAgo !== null && secsAgo > 120) { statusText = `STALE · NO DATA ${Math.round(secsAgo / 60)}M`; statusColor = 'var(--max-marker)'; }
       else { statusText = 'LIVE'; statusColor = 'var(--accent)'; } 
 
-      const tempVal = num('outTemp_C', null);
+      const tempVal = num(FIELD.temp, null);
       /* Values arrive from the station in metric and are converted only
          here, for display. Everything computed below — trends, comfort
          thresholds, the barograph — stays in °C and mb. */
       const airTempText = tempVal !== null ? U.tv(tempVal) : "--";
-      const feelsLikeText = tempVal !== null ? U.tv(num('appTemp_C')) : "--";
-      const dewPointText = tempVal !== null ? U.tv(num('dewpoint_C')) : "--";
-      const humidexText = tempVal !== null ? U.tv(num('humidex_C')) : "--"; 
+      const feelsLikeText = tempVal !== null ? U.tv(num(FIELD.appTemp)) : "--";
+      const dewPointText = tempVal !== null ? U.tv(num(FIELD.dewpoint)) : "--";
+      const humidexText = tempVal !== null ? U.tv(num(FIELD.humidex)) : "--"; 
 
-      const rainRate=num('rainRate_mm_per_hour'), rad=num('radiation_Wpm2');
+      const rainRate=num(FIELD.rainRate), rad=num(FIELD.radiation);
       let cond = 'Clear night', glyph = 'moon';
       if (tempVal !== null) {
         if(rainRate>0){ cond = rainRate>2.5?'Rain':'Light rain'; glyph='rain'; }
         else if(rad/1>=400){ cond='Sunny · clear'; glyph='sun'; }
         else if(rad/1>=120){ cond='Bright · hazy sun'; glyph='sun'; }
         else if(rad>0){ cond='Overcast'; glyph='cloud'; }
-        else { cond = num('outHumidity')>92 ? 'Clear · risk of fog' : 'Clear night'; glyph='moon'; }
+        else { cond = num(FIELD.outHumidity)>92 ? 'Clear · risk of fog' : 'Clear night'; glyph='moon'; }
       }
       const conditionalStatus = tempVal !== null ? cond : "Connecting..."; 
 
@@ -682,7 +721,7 @@
       };
       const glyphSvgRaw = tempVal !== null ? (G[glyph] || '') : ''; 
 
-      const nowMB = num('barometer_mbar');
+      const nowMB = num(FIELD.barometer);
       let trend3h;
       if (weewxBaroTrendMb !== null) {
         trend3h = r1(weewxBaroTrendMb);
@@ -728,16 +767,16 @@
         if(dP<-0.4 && (windDeg>=70 && windDeg<=200)) base += ' (humid)';
         return base;
       }
-      const wDegRaw = parseFloat(data.windDir);
+      const wDegRaw = parseFloat(data[FIELD.windDir]);
       const wDeg = isNaN(wDegRaw) ? null : wDegRaw;
       const nowcastOutput = nowcast(nowMB, trend3h, wDeg ?? 0); 
 
-      const wSpd=num('windSpeed_mph');
-      const wGust=data.windGust_mph?num('windGust_mph'):num('windGust10');
+      const wSpd=num(FIELD.windSpeed);
+      const wGust=data.windGust_mph?num(FIELD.windGust):num(FIELD.windGust10);
       const compass16=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
       const dirName = wDeg !== null ? compass16[Math.round(wDeg/22.5)%16] : null;
       const beauNames=['Calm','Light air','Light breeze','Gentle breeze','Moderate breeze','Fresh breeze','Strong breeze','Near gale','Gale','Strong gale','Storm','Violent storm','Hurricane'];
-      const beau=Math.round(num('beaufort_count')); 
+      const beau=Math.round(num(FIELD.beaufort)); 
 
       const windSpeedText = tempVal !== null ? Math.round(wSpd) : "--";
       const windGustText = tempVal !== null ? Math.round(wGust) : "--";
@@ -748,12 +787,12 @@
         : (wDeg !== null ? `${dirName}<span class="deg-num">${Math.round(wDeg)}°</span>` : null);
       const beaufortText = tempVal !== null ? `Force ${beau} · ${beauNames[beau]||''}` : "—"; 
 
-      const uv=Math.round(num('UV')*10)/10;
+      const uv=Math.round(num(FIELD.uv)*10)/10;
       const uvBand = uv<3?'Low':uv<6?'Moderate':uv<8?'High':uv<11?'Very high':'Extreme';
       const uvPct = Math.min(uv,11)/11*100;
-      const cloud = Math.round(num('cloudbase_meter'));
-      const activeRainToday = parseFloat(data.dayRain_mm) > 0;
-      const activeStormRain = parseFloat(data.stormRain) > 0; 
+      const cloud = Math.round(num(FIELD.cloudbase));
+      const activeRainToday = parseFloat(data[FIELD.dayRain]) > 0;
+      const activeStormRain = parseFloat(data[FIELD.stormRain]) > 0; 
 
       const aqiVal = liveAqi !== null ? Math.round(liveAqi) : null;
       const aqiBand = aqiVal===null ? '—' : aqiVal<=50?'Good' : aqiVal<=100?'Moderate' : aqiVal<=150?'Unhealthy (Sensitive)' : aqiVal<=200?'Unhealthy' : aqiVal<=300?'Very Unhealthy' : 'Hazardous';
@@ -763,12 +802,12 @@
       const aqiNote = aqiTrendText ? `${aqiBand} · ${aqiTrendText}` : aqiBand; 
 
       const tiles=[
-        {lbl:'Relative humidity', val:Math.round(num('outHumidity')), unit:'%', note:`Indoor ${r1(num('inTemp_C'))}°C · ${Math.round(num('inHumidity'))}%`},
+        {lbl:'Relative humidity', val:Math.round(num(FIELD.outHumidity)), unit:'%', note:`Indoor ${r1(num(FIELD.inTemp))}°C · ${Math.round(num(FIELD.inHumidity))}%`},
         {lbl:'UV index', val:uv, unit:'', note:uvBand, uv:true},
-        {lbl:'Solar radiation', val:Math.round(num('radiation_Wpm2')), unit:'W/m²', note:'Shortwave'},
+        {lbl:'Solar radiation', val:Math.round(num(FIELD.radiation)), unit:'W/m²', note:'Shortwave'},
         {lbl:'Cloud base', val:cloud>=1000?(cloud/1000).toFixed(1):cloud, unit:cloud>=1000?'km':'m', note:'Est. LCL'},
-        {lbl:'Rain today', val: U.rv(num('dayRain_mm')), unit:U.rainUnit, note:`Rate ${r1(num('rainRate_mm_per_hour'))} mm/h`, isRain: activeRainToday},
-        {lbl:'Storm rain', val:r1(num('stormRain')), unit:U.rainUnit, note:'Storm total', isRain: activeStormRain},
+        {lbl:'Rain today', val: U.rv(num(FIELD.dayRain)), unit:U.rainUnit, note:`Rate ${r1(num(FIELD.rainRate))} mm/h`, isRain: activeRainToday},
+        {lbl:'Storm rain', val:r1(num(FIELD.stormRain)), unit:U.rainUnit, note:'Storm total', isRain: activeStormRain},
         {lbl:'PM2.5', val:pm25Val===null?'--':pm25Val, unit:'µg/m³', note:'AirGradient'},
         {lbl:'Air quality', val:aqiVal===null?'--':aqiVal, unit:'', note:aqiNote, aqi:true},
         {lbl:'Lightning', val:liveLightningCount===null?'--':Math.round(liveLightningCount), unit:'', note: liveLightningDistance===null ? 'Strikes detected · Blitzortung' : `Nearest ${r1(liveLightningDistance)} km away`}
@@ -776,7 +815,7 @@
 
       let localHistory = [...pressureHistory];
       localHistory = localHistory.filter(p => p.minsAgo > 0);
-      if (!isNaN(parseFloat(data.barometer_mbar))) { localHistory.push({ minsAgo: 0, mb: parseFloat(data.barometer_mbar) }); }
+      if (!isNaN(parseFloat(data[FIELD.barometer]))) { localHistory.push({ minsAgo: 0, mb: parseFloat(data[FIELD.barometer]) }); }
       const mbs=localHistory.map(p=>p.mb);
       let lo = NaN, hi = NaN;
       if (localHistory.length > 0) {
