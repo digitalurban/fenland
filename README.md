@@ -260,6 +260,45 @@ Open-Meteo's paid tier.
 
 ---
 
+## Status and roadmap
+
+Version 1.0.0. Running in production at
+[digitalurban.github.io/fenland](https://digitalurban.github.io/fenland/), which
+is also the demo — so if the demo is broken, so is the author's weather station.
+
+**Known gaps, honestly:**
+
+- **Imperial display is tested but not battle-tested.** Conversion is verified
+  automatically in both unit systems, including the awkward case of temperature
+  *differences*, but no one has yet run the page in Fahrenheit in anger. If you
+  are the first, please open an issue with a screenshot of anything that reads
+  oddly.
+- **Forecast verification needs weeks before it says much.** That is inherent,
+  not a defect, but do not judge the model league table on a fortnight.
+- **The dashboard assumes a metric loop packet.** See
+  [Live data](#live-data) — one line in `weewx.conf`, or remap with `fields`.
+
+**On the list:**
+
+- Air quality from Open-Meteo's air-quality API, so the panel works without an
+  AirGradient or any other sensor
+- A health panel flagging stale or zero-byte JSON files before they show up as
+  a blank chart. Written after exactly that happened
+- Cumulative rainfall for the year on the history tab, which needs `chart3`
+  adding to the `[year]` group in `graphs.conf`
+
+## Contributing
+
+Issues and pull requests welcome. Two things that help:
+
+- **Say what your station publishes.** Most problems are field names or units —
+  paste a sample of your MQTT payload or `loop.json` and it is usually obvious.
+- **Quote the version** from the footer credit. It is there so that "which
+  version?" is answerable from a screenshot.
+
+Run `python3 build.py` after editing anything in `panes/`, and commit both the
+pane and the regenerated `index.html`.
+
 ## Licence
 
 MIT — see [LICENSE](LICENSE).
