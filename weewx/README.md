@@ -1,8 +1,11 @@
 # Adding the panels to an existing weeWX site
 
-The standalone page (`../index.html`) needs nothing but a config file. This
-guide is for the other case: you already have a weeWX site — Belchertown or
-your own — and want the panels as extra tabs inside it.
+`../index.html` is the complete Fenland skin: dashboard plus all five tabs. Use
+that if you want the whole thing.
+
+This guide is for the other case — you already have a weeWX site you like,
+Belchertown or your own, and want only the Forecast, Ensemble and Climate
+panels added to it as extra tabs.
 
 There is no installer, deliberately. Every weeWX site's HTML is different, and
 a script that guesses at your markup would break in ways that are hard to
@@ -43,6 +46,7 @@ Before `</body>`:
 
 ```html
 <script src="/fenland/config.js"></script>
+<script src="/fenland/src/units.js"></script>
 <script src="/fenland/src/colours.js"></script>
 <script src="/fenland/src/ensemble.js"></script>
 <script src="/fenland/src/forecast.js"></script>
@@ -50,8 +54,13 @@ Before `</body>`:
 <script src="/fenland/src/verify-panel.js"></script>   <!-- optional -->
 ```
 
-Order doesn't matter. Each file defines one global (`window.__ENSEMBLE__` and
-so on) and does nothing until you call it.
+`config.js` and `units.js` must come **first** — every panel formats its output
+through `U`, and they will fail with `U is not defined` otherwise. The rest can
+be in any order; each defines one global (`window.__ENSEMBLE__` and so on) and
+does nothing until you call it.
+
+Omit any panel you don't want. Leaving out `verify-panel.js` simply means no
+forecast-accuracy section.
 
 ## 3. Add the pane markup
 
@@ -88,6 +97,23 @@ hidden element gets its dimensions wrong.
 
 ---
 
+## Units
+
+Set these in `config.js` and every panel follows:
+
+```js
+units: { temp: "f", rain: "in", pressure: "inhg", wind: "mph" }
+```
+
+Everything is computed in metric internally and converted only for display, so
+thresholds and rankings behave identically whichever you choose. Omit the block
+entirely for metric.
+
+Note that this governs the *panels* only. Your own skin's dashboard will keep
+displaying whatever weeWX sends it — Fenland doesn't reach into your markup.
+
+---
+
 ## Styling
 
 The panels expect a handful of classes that Belchertown already provides:
@@ -114,9 +140,9 @@ the charts are skipped.
 
 ## Two extras for Belchertown specifically
 
-`src/windrose.js` and `src/solar.js` are not part of the standalone page. They
-read Belchertown's chart JSON (`chartDataCache`) directly and add two more
-charts to the history pane:
+`src/windrose.js` and `src/solar.js` read Belchertown's chart JSON
+(`chartDataCache`) directly, so they only work on a Belchertown-derived page.
+They add two more charts to the history pane:
 
 - **Wind rose** — computed from `windDir` and `windSpeed`, so it needs no
   config change at all. Add `<div class="chart-card"><div class="chart-card-body"

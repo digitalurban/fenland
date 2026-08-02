@@ -140,6 +140,29 @@ rebuilds, and weather data changing every five minutes will hit that limit.
 
 ---
 
+## How it fits together
+
+No build step, no framework, no dependencies beyond Highcharts from a CDN.
+`index.html` loads a handful of independent files:
+
+| File | Does |
+|---|---|
+| `config.js` | Your settings. The only file you have to edit |
+| `src/units.js` | Converts metric internals into your chosen display units. **Loads first** — everything else formats through it |
+| `src/dashboard.js` | Live gauges, tiles and barograph, over MQTT or JSON polling |
+| `src/forecast.js` | Forecast tab |
+| `src/ensemble.js` | Ensemble tab |
+| `src/climate.js` | Climate tab |
+| `src/verify-panel.js` | Forecast-accuracy panel, if verification is set up |
+| `src/colours.js` | Colours every chart series by value |
+| `src/windrose.js`, `src/solar.js` | Two extra history charts |
+
+Each panel defines exactly one global, loads its own data lazily the first time
+its tab is opened, and fails quietly if its data source is missing. Deleting any
+of them removes that feature and breaks nothing else.
+
+---
+
 ## Configuration
 
 Everything is in `config.js`; `config.example.js` is the annotated reference.
