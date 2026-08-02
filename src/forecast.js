@@ -70,7 +70,7 @@ window.__FORECAST2__ = (function () {
     const k = $("fcTempKey"); if (!k) return;
     const s = scale();
     k.innerHTML = s.length
-      ? "<span class='cap'>°C</span>" +
+      ? "<span class='cap'>" + U.tempUnit + "</span>" +
         s.map(z => "<span><i style='background:" + z.c + "'></i><b>" + z.lbl + "</b></span>").join("")
       : "";
   }
@@ -86,7 +86,15 @@ window.__FORECAST2__ = (function () {
   }
   const compass = deg => deg == null ? "" :
     ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(deg/22.5) % 16];
-  const describeWind = w => w == null ? "" : w>=45?"gale-force":w>=32?"very strong":w>=24?"blustery":w>=16?"moderate":w>=9?"light":"near-calm";
+  /* Beaufort-ish descriptions. The thresholds are mph, so convert whatever
+     unit the API returned before comparing — otherwise a 45 km/h breeze gets
+     called "gale-force". */
+  const TO_MPH = { mph: 1, kmh: 0.621371, ms: 2.23694, kn: 1.15078 };
+  const describeWind = w => {
+    if (w == null) return "";
+    const m = w * (TO_MPH[String((CFG.units && CFG.units.wind) || "mph").toLowerCase()] || 1);
+    return m>=45?"gale-force":m>=32?"very strong":m>=24?"blustery":m>=16?"moderate":m>=9?"light":"near-calm";
+  };
   const uvBand = u => u == null ? "" : u >= 8 ? "very high" : u >= 6 ? "high" : u >= 3 ? "moderate" : "low";
 
   /* ── load ─────────────────────────────────────────────────────────── */
@@ -198,13 +206,13 @@ window.__FORECAST2__ = (function () {
     const obs = observedToday();
     const facts = [];
     const push = (k, v, s) => { if (v != null && v !== "") facts.push({k, v, s}); };
-    if (obs.max) push("Station so far", r1(obs.max.v) + "°C", obs.max.at ? "max " + obs.max.at : "observed");
+    if (obs.max) push("Station so far", U.t(obs.max.v), obs.max.at ? "max " + obs.max.at : "observed");
     push("Wind", d0.wind != null ? r0(d0.wind) + " mph" : null,
          (compass(d0.dir) || "") + (d0.gust != null ? " · gust " + r0(d0.gust) : ""));
     push("Rain", d0.pop != null ? r0(d0.pop) + "%" : null,
-         d0.mm != null ? r1(d0.mm) + " mm expected" : "chance");
+         d0.mm != null ? U.r(d0.mm) + " expected" : "chance");
     push("Humidity", cur && cur.rh != null ? r0(cur.rh) + "%" : null,
-         cur && cur.dew != null ? "dew " + r0(cur.dew) + "°" : "");
+         cur && cur.dew != null ? "dew " + U.t(cur.dew, 0) : "");
     push("UV index", d0.uv != null ? r1(d0.uv) : null, uvBand(d0.uv));
     push("Daylight", d0.sunrise && d0.sunset ? hhmm(d0.sunrise) + "–" + hhmm(d0.sunset) : null,
          d0.sunrise && d0.sunset ? r1((d0.sunset - d0.sunrise)/3600000) + " hours" : "");
@@ -213,7 +221,7 @@ window.__FORECAST2__ = (function () {
       "<div class='fc-now-glyph'>" + glyph(d0.code, true) + "</div>" +
       "<div class='fc-now-main'>" +
         "<div class='fc-now-head'>Today</div>" +
-        "<div class='fc-now-temp'>" + r0(d0.tmax) + "°<span class='lo'>/ " + r0(d0.tmin) + "°</span></div>" +
+        "<div class='fc-now-temp'>" + U.tv(d0.tmax,0) + "°<span class='lo'>/ " + U.tv(d0.tmin,0) + "°</span></div>" +
         "<div class='fc-now-desc'>" + wmoText(d0.code) + "</div>" +
       "</div>" +
       "<div class='fc-now-facts'>" +
@@ -229,8 +237,8 @@ window.__FORECAST2__ = (function () {
     if (!obs.max || d0.tmax == null) return "";
     const gap = obs.max.v - d0.tmax;
     if (gap < 1) return "";
-    return "<div class='fc-warn'>⚠ The station has already reached <b>" + r1(obs.max.v) + "°C</b>, " +
-      r1(gap) + "°C above today's forecast high of " + r1(d0.tmax) + "°C. " +
+    return "<div class='fc-warn'>⚠ The station has already reached <b>" + U.t(obs.max.v) + "</b>, " +
+      U.dt(gap) + " above today's forecast high of " + U.t(d0.tmax) + ". " +
       (gap >= 3
         ? "A gap this large usually means the model is carrying too much soil moisture: it assumes energy goes into evaporating water that, in a drought, simply is not there — so it under-forecasts the maximum."
         : "Treat today's remaining figures as a floor rather than a forecast.") + "</div>";
@@ -308,19 +316,19 @@ window.__FORECAST2__ = (function () {
     const series = [
       { name: "Temperature", data: temp, type: "spline", lineWidth: 2.8, zIndex: 5,
         color: "#0ea5e9", zoneAxis: "y", zones: tempZones(),
-        tooltip: { valueSuffix: " °C", valueDecimals: 1 } },
+        tooltip: { valueSuffix: " " + U.tempUnit, valueDecimals: 1 } },
       { name: "Feels like", data: feel, type: "spline", dashStyle: "ShortDash", color: "#94a3b8",
-        lineWidth: 1.5, zIndex: 4, tooltip: { valueSuffix: " °C", valueDecimals: 1 } },
+        lineWidth: 1.5, zIndex: 4, tooltip: { valueSuffix: " " + U.tempUnit, valueDecimals: 1 } },
       { name: "Rainfall", data: rain, type: "column", yAxis: 1, color: "#2563eb", borderWidth: 0, zIndex: 2,
-        tooltip: { valueSuffix: " mm", valueDecimals: 1 } },
+        tooltip: { valueSuffix: " " + U.rainUnit, valueDecimals: 1 } },
       { name: "Chance of rain", data: pop, type: "spline", yAxis: 2, dashStyle: "Dot", color: "#d97706",
         lineWidth: 1.5, zIndex: 3, tooltip: { valueSuffix: " %", valueDecimals: 0 } }
     ];
     if (eHi.length) {
       series.push({ name: "Ensemble 10–90%", data: eHi, type: "line", color: "rgba(100,116,139,.45)",
-        lineWidth: 1, dashStyle: "Dot", zIndex: 1, tooltip: { valueSuffix: " °C", valueDecimals: 1 } });
+        lineWidth: 1, dashStyle: "Dot", zIndex: 1, tooltip: { valueSuffix: " " + U.tempUnit, valueDecimals: 1 } });
       series.push({ data: eLo, type: "line", linkedTo: ":previous", color: "rgba(100,116,139,.45)",
-        lineWidth: 1, dashStyle: "Dot", zIndex: 1, tooltip: { valueSuffix: " °C", valueDecimals: 1 } });
+        lineWidth: 1, dashStyle: "Dot", zIndex: 1, tooltip: { valueSuffix: " " + U.tempUnit, valueDecimals: 1 } });
     }
 
     // Highcharts renders at the height given in its config, so the chart has
@@ -334,8 +342,8 @@ window.__FORECAST2__ = (function () {
       xAxis: { type: "datetime", plotBands: bands, crosshair: true,
                labels: { format: S.span > 72 ? "{value:%a %e}" : "{value:%a %H}" } },
       yAxis: [
-        { title: { text: "°C" } },
-        { title: { text: "mm" }, opposite: true, min: 0, gridLineWidth: 0 },
+        { title: { text: U.tempUnit } },
+        { title: { text: U.rainUnit }, opposite: true, min: 0, gridLineWidth: 0 },
         { min: 0, max: 100, opposite: true, visible: false }
       ],
       tooltip: { shared: true, xDateFormat: "%A %e %B, %H:%M" },
@@ -356,9 +364,9 @@ window.__FORECAST2__ = (function () {
       "<div class='fc-hour" + (p.isDay ? "" : " night") + "'>" +
         "<div class='h-t'>" + hhmm(p.t) + "</div>" +
         "<div class='h-g'>" + glyph(p.code, p.isDay) + "</div>" +
-        "<div class='h-c'>" + r0(p.temp) + "°</div>" +
+        "<div class='h-c'>" + U.tv(p.temp,0) + "°</div>" +
         (p.feels != null && p.temp != null && Math.abs(p.feels - p.temp) >= 1
-          ? "<div class='h-f'>feels " + r0(p.feels) + "°</div>" : "<div class='h-f'>&nbsp;</div>") +
+          ? "<div class='h-f'>feels " + U.tv(p.feels,0) + "°</div>" : "<div class='h-f'>&nbsp;</div>") +
         (p.wind != null ? "<div class='h-w'>" + arrowSvg(p.dir) + r0(p.wind) + "</div>" : "") +
         (p.pop != null ? "<div class='h-p" + (p.pop < 5 ? " dry" : "") + "'>" + r0(p.pop) + "%</div>" : "") +
       "</div>").join("");
@@ -379,7 +387,7 @@ window.__FORECAST2__ = (function () {
         "<div class='d-n'>" + p.t.toLocaleDateString("en-GB",{weekday:"short"}).toUpperCase() + "</div>" +
         "<div class='d-d'>" + p.t.toLocaleDateString("en-GB",{day:"numeric",month:"short"}) + "</div>" +
         "<div class='d-g'>" + glyph(p.code, true) + "</div>" +
-        "<div class='d-t'><span class='hi'>" + r0(p.tmax) + "°</span> <span class='lo'>" + r0(p.tmin) + "°</span></div>" +
+        "<div class='d-t'><span class='hi'>" + U.tv(p.tmax,0) + "°</span> <span class='lo'>" + U.tv(p.tmin,0) + "°</span></div>" +
         "<div class='fc-range'><span style='left:" + left.toFixed(1) + "%;width:" + width.toFixed(1) + "%'></span></div>" +
         "<div class='d-p'>" + (p.pop != null ? r0(p.pop) + "%" : "–") + (p.mm ? " · " + r1(p.mm) + "mm" : "") + "</div>" +
         (p.gust != null || p.wind != null ? "<div class='d-w'>" + r0(p.gust != null ? p.gust : p.wind) + " mph</div>" : "") +
@@ -396,16 +404,16 @@ window.__FORECAST2__ = (function () {
 
     const facts = [];
     const push = (k, v, s) => { if (v != null && v !== "" && v !== "–") facts.push([k, v, s || ""]); };
-    push("High / low", r1(p.tmax) + "° / " + r1(p.tmin) + "°",
-         p.feelsMax != null ? "feels " + r0(p.feelsMax) + "° / " + r0(p.feelsMin) + "°" : "");
+    push("High / low", U.t(p.tmax) + " / " + U.t(p.tmin),
+         p.feelsMax != null ? "feels " + U.tv(p.feelsMax,0) + "° / " + U.tv(p.feelsMin,0) + "°" : "");
     push("Chance of rain", p.pop != null ? r0(p.pop) + "%" : null,
-         p.mm != null ? r1(p.mm) + " mm expected" : "");
+         p.mm != null ? U.r(p.mm) + " expected" : "");
     push("Wind", p.wind != null ? r0(p.wind) + " mph" : null,
          (compass(p.dir) || "") + (p.gust != null ? " · gust " + r0(p.gust) : ""));
     const dayHrs = hrs.filter(h => h.isDay);
     push("Humidity", avg(hrs.map(h => h.rh)) != null ? r0(avg(hrs.map(h => h.rh))) + "%" : null,
-         avg(hrs.map(h => h.dew)) != null ? "dew point " + r0(avg(hrs.map(h => h.dew))) + "°" : "");
-    push("Pressure", avg(hrs.map(h => h.pres)) != null ? r0(avg(hrs.map(h => h.pres))) + " mb" : null, "");
+         avg(hrs.map(h => h.dew)) != null ? "dew point " + U.t(avg(hrs.map(h => h.dew)), 0) : "");
+    push("Pressure", avg(hrs.map(h => h.pres)) != null ? U.p(avg(hrs.map(h => h.pres))) : null, "");
     push("Cloud cover", avg(dayHrs.map(h => h.cloud)) != null ? r0(avg(dayHrs.map(h => h.cloud))) + "%" : null, "daytime average");
     push("UV index", p.uv != null ? r1(p.uv) : null, uvBand(p.uv));
     push("Sunrise / set", p.sunrise && p.sunset ? hhmm(p.sunrise) + " · " + hhmm(p.sunset) : null,
@@ -427,9 +435,9 @@ window.__FORECAST2__ = (function () {
           "<th>Hour</th><th>Temp</th><th>Feels</th><th>Rain</th><th>mm</th><th>Wind</th><th>Cloud</th><th>Conditions</th>" +
           "</tr></thead><tbody>" +
           hrs.filter((h,i) => hrs.length <= 24 || i % 2 === 0).map(h =>
-            "<tr><td>" + hhmm(h.t) + "</td><td>" + r1(h.temp) + "°</td><td>" + r1(h.feels) + "°</td>" +
+            "<tr><td>" + hhmm(h.t) + "</td><td>" + U.tv(h.temp) + "°</td><td>" + U.tv(h.feels) + "°</td>" +
             "<td>" + (h.pop != null ? r0(h.pop) + "%" : "–") + "</td>" +
-            "<td>" + (h.mm != null ? r1(h.mm) : "–") + "</td>" +
+            "<td>" + (h.mm != null ? U.rv(h.mm) : "–") + "</td>" +
             "<td>" + (h.wind != null ? r0(h.wind) + " " + compass(h.dir) : "–") +
               (h.gust != null ? "<span class='stat-at'>gust " + r0(h.gust) + "</span>" : "") + "</td>" +
             "<td>" + (h.cloud != null ? r0(h.cloud) + "%" : "–") + "</td>" +
@@ -480,8 +488,8 @@ window.__FORECAST2__ = (function () {
         const v = verdict(r.pl);
         const gap = (r.fcPop != null && r.ensProb != null) ? r.fcPop - r.ensProb : null;
         return "<tr><td>" + r.d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}) + "</td>" +
-          "<td><span class='stat-hi'>" + r1(r.fcMax) + "°</span></td>" +
-          "<td>" + r1(r.ensMean) + "°<span class='stat-at'>" + r1(r.e.tmax.p10) + "–" + r1(r.e.tmax.p90) + "°</span></td>" +
+          "<td><span class='stat-hi'>" + U.tv(r.fcMax) + "°</span></td>" +
+          "<td>" + U.tv(r.ensMean) + "°<span class='stat-at'>" + U.tv(r.e.tmax.p10) + "–" + U.tv(r.e.tmax.p90) + "°</span></td>" +
           "<td>" + (r.pl != null ? ord(Math.round(r.pl*100)) : "–") + "</td>" +
           "<td><span class='fc-verdict " + v[0] + "'>" + v[1] + "</span></td>" +
           "<td>" + (r.fcPop != null ? r0(r.fcPop) + "%" : "–") + "</td>" +
@@ -543,23 +551,23 @@ window.__FORECAST2__ = (function () {
     const d0 = days[0], d1 = days[1];
     let out = "";
 
-    out += "<p><b>Today.</b> " + (wmoText(d0.code) || "Mixed conditions") + ", topping out near <b>" + r0(d0.tmax) + "°C</b>" +
+    out += "<p><b>Today.</b> " + (wmoText(d0.code) || "Mixed conditions") + ", topping out near <b>" + U.t(d0.tmax, 0) + "</b>" +
       (d0.feelsMax != null && d0.tmax != null && Math.abs(d0.feelsMax - d0.tmax) >= 2
-        ? " though it will feel more like " + r0(d0.feelsMax) + "°C" : "") + ". " +
+        ? " though it will feel more like " + U.t(d0.feelsMax, 0) : "") + ". " +
       (d0.pop != null
         ? (d0.pop >= 60 ? "Rain is likely — " + r0(d0.pop) + "% chance"
           : d0.pop >= 30 ? "There is a " + r0(d0.pop) + "% chance of catching a shower"
           : "It should stay largely dry, with only a " + r0(d0.pop) + "% chance of rain") +
-          (d0.mm ? ", around " + r1(d0.mm) + " mm if it comes to anything" : "") + ". " : "") +
+          (d0.mm ? ", around " + U.r(d0.mm) + " if it comes to anything" : "") + ". " : "") +
       (d0.wind != null ? "Winds " + describeWind(d0.wind) + " at " + r0(d0.wind) + " mph" +
         (compass(d0.dir) ? " from the " + compass(d0.dir) : "") +
         (d0.gust != null && d0.gust > d0.wind*1.3 ? ", gusting " + r0(d0.gust) + " mph" : "") + ". " : "") +
       (d0.sunset ? "Sunset at " + hhmm(d0.sunset) + "." : "") + "</p>";
 
     if (d1) {
-      out += "<p><b>Tonight and tomorrow.</b> Down to around <b>" + r0(d0.tmin) + "°C</b> overnight" +
+      out += "<p><b>Tonight and tomorrow.</b> Down to around <b>" + U.t(d0.tmin, 0) + "</b> overnight" +
         (d0.tmin != null && d0.tmin <= 3 ? " — cold enough to be worth watching for frost" : "") + ". " +
-        "Tomorrow brings " + wmoText(d1.code).toLowerCase() + " with a high of " + r0(d1.tmax) + "°C" +
+        "Tomorrow brings " + wmoText(d1.code).toLowerCase() + " with a high of " + U.t(d1.tmax, 0) +
         (d1.pop != null ? " and a " + r0(d1.pop) + "% chance of rain" : "") + ".</p>";
     }
 
@@ -570,11 +578,11 @@ window.__FORECAST2__ = (function () {
       const wettest = rest.reduce((a,b) => (b.pop||0) > (a.pop||0) ? b : a);
       const windiest = rest.reduce((a,b) => (b.gust||b.wind||0) > (a.gust||a.wind||0) ? b : a);
       out += "<p><b>Rest of the week.</b> Highs " +
-        (Math.abs(trend) < 1.5 ? "hold steady around " + r0(his.reduce((a,b)=>a+b,0)/his.length) + "°C"
-          : trend > 0 ? "climb to about " + r0(his[his.length-1]) + "°C by the end of the period"
-          : "slip back to about " + r0(his[his.length-1]) + "°C by the end of the period") + ". " +
+        (Math.abs(trend) < 1.5 ? "hold steady around " + U.t(his.reduce((a,b)=>a+b,0)/his.length, 0)
+          : trend > 0 ? "climb to about " + U.t(his[his.length-1], 0) + " by the end of the period"
+          : "slip back to about " + U.t(his[his.length-1], 0) + " by the end of the period") + ". " +
         (wettest.pop != null ? "The wettest day looks like <b>" + wettest.t.toLocaleDateString("en-GB",{weekday:"long"}) +
-          "</b> at " + r0(wettest.pop) + "%" + (wettest.mm ? ", around " + r1(wettest.mm) + " mm" : "") + ". " : "") +
+          "</b> at " + r0(wettest.pop) + "%" + (wettest.mm ? ", around " + U.r(wettest.mm) : "") + ". " : "") +
         ((windiest.gust || 0) >= 30 ? "<b>" + windiest.t.toLocaleDateString("en-GB",{weekday:"long"}) +
           "</b> is the windiest, gusting to " + r0(windiest.gust) + " mph." : "") + "</p>";
     }

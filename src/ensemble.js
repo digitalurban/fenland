@@ -336,7 +336,7 @@ window.__ENSEMBLE__ = (function () {
       const v = maxV*i/4, y = h - PAD.b - (v/maxV)*(h-PAD.t-PAD.b);
       ctx.strokeStyle = faint; ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(w-PAD.r,y); ctx.stroke();
       ctx.fillStyle = slate; ctx.textAlign = "right"; ctx.textBaseline = "middle";
-      ctx.fillText(v.toFixed(1) + "mm", PAD.l-6, y);
+      ctx.fillText(U.rv(v) + U.rainUnit, PAD.l-6, y);
     }
     d.forEach((x,i) => {
       const cx = PAD.l + i*bw, y0 = h - PAD.b;
@@ -366,10 +366,10 @@ window.__ENSEMBLE__ = (function () {
     hookTip(cv, d.length, i => PAD.l + i*bw + bw/2, i => {
       const x = d[i];
       let s = dayName(x.date).toUpperCase() + "\n" + Math.round(x.rain.prob*100) + "% OF MEMBERS WET\nMEAN " +
-              r1(x.rain.mean) + " mm · P90 " + r1(x.rain.p90) + " mm";
+              U.r(x.rain.mean) + " · P90 " + U.r(x.rain.p90);
       Object.keys(x.byModel).forEach(id => {
         const m = MODELS.filter(z => z.id === id)[0];
-        s += "\n" + (m.short + "        ").slice(0,8) + " " + r1(x.byModel[id].rain.mean) + " mm (" + Math.round(x.byModel[id].rain.prob*100) + "%)";
+        s += "\n" + (m.short + "        ").slice(0,8) + " " + U.r(x.byModel[id].rain.mean) + " (" + Math.round(x.byModel[id].rain.prob*100) + "%)";
       });
       return s;
     });
@@ -417,21 +417,23 @@ window.__ENSEMBLE__ = (function () {
       const cover = Object.keys(d.byModel).length;
       const partial = cover < full ? " <span class='ens-partial'>" + cover + "/" + full + "</span>" : "";
       return "<tr><td>" + dayName(d.date) + partial + "</td>" +
-        "<td><span class='stat-hi'>" + r1(d.tmax.mean) + "°</span>" +
-          "<span class='stat-at'>" + r1(d.tmax.p10) + "–" + r1(d.tmax.p90) + "° · peak " + r1(d.tmax.hi) + "°</span></td>" +
-        "<td><span class='stat-lo'>" + r1(d.tmin.mean) + "°</span>" +
-          "<span class='stat-at'>" + r1(d.tmin.p10) + "–" + r1(d.tmin.p90) + "° · low " + r1(d.tmin.lo) + "°</span></td>" +
+        "<td><span class='stat-hi'>" + U.tv(d.tmax.mean) + "°</span>" +
+          "<span class='stat-at'>" + U.tv(d.tmax.p10) + "–" + U.tv(d.tmax.p90) + "° · peak " + U.tv(d.tmax.hi) + "°</span></td>" +
+        "<td><span class='stat-lo'>" + U.tv(d.tmin.mean) + "°</span>" +
+          "<span class='stat-at'>" + U.tv(d.tmin.p10) + "–" + U.tv(d.tmin.p90) + "° · low " + U.tv(d.tmin.lo) + "°</span></td>" +
         "<td class='" + tc[0] + "'>" + tc[1] + "</td>" +
         "<td><span class='ens-bar-mini'><span style='width:" + (d.rain.prob*100).toFixed(0) + "%'></span></span>" +
           "<span class='stat-at'>" + Math.round(d.rain.prob*100) + "% of members</span></td>" +
-        "<td>" + r1(d.rain.mean) + "<span class='stat-at'>" + r1(d.rain.p10) + "–" + r1(d.rain.p90) + " · max " + r1(d.rain.max) + " mm</span></td>" +
+        "<td>" + U.rv(d.rain.mean) + "<span class='stat-at'>" + U.rv(d.rain.p10) + "–" + U.rv(d.rain.p90) + " · max " + U.rv(d.rain.max) + " " + U.rainUnit + "</span></td>" +
         "<td class='" + rc[0] + "'>" + rc[1] + "</td>" +
         "<td>" + r0(d.wind.mean) + "<span class='stat-at'>p90 " + r0(d.wind.p90) + "</span></td>" +
         "<td>" + r0(d.pres.mean) + "</td></tr>";
     }).join("");
     $("ensDayTable").innerHTML =
       "<div class='stats-table-scroll'><table class='stats-table ens-day-table'><thead><tr>" +
-      "<th>Day</th><th>Max °C</th><th>Min °C</th><th>Temp conf</th><th>Rain risk</th><th>Rain mm</th><th>Rain conf</th><th>Wind mph</th><th>hPa</th>" +
+      "<th>Day</th><th>Max " + U.tempUnit + "</th><th>Min " + U.tempUnit + "</th><th>Temp conf</th>" +
+        "<th>Rain risk</th><th>Rain " + U.rainUnit + "</th><th>Rain conf</th>" +
+        "<th>Wind " + U.windUnit + "</th><th>" + U.presUnit + "</th>" +
       "</tr></thead><tbody>" + rows + "</tbody></table></div>";
   }
 
@@ -456,19 +458,28 @@ window.__ENSEMBLE__ = (function () {
           : r.tmax === loT ? " <span class='stat-at' style='color:var(--highlight)'>coolest</span>" : "") : "";
       return "<tr><td><span style='color:" + r.m.color + "'>■</span> " + r.m.name +
         "<span class='stat-at'>" + r.m.centre + "</span></td>" +
-        "<td>" + r.members + "</td><td>" + r1(r.tmax) + "°" + tag + "</td><td>" + r1(r.tmin) + "°</td>" +
-        "<td>" + r1(r.rain) + " mm</td><td>" + r0(r.wind) + "</td><td>" + r0(r.pres) + "</td>" +
+        "<td>" + r.members + "</td><td>" + U.tv(r.tmax) + "°" + tag + "</td><td>" + U.tv(r.tmin) + "°</td>" +
+        "<td>" + U.r(r.rain) + "</td><td>" + r0(r.wind) + "</td><td>" + U.p(r.pres) + "</td>" +
         "<td>" + r.cover + "/" + n + "</td></tr>";
     }).join("");
     $("ensModelTable").innerHTML =
       "<div class='stats-table-scroll'><table class='stats-table'><thead><tr>" +
-      "<th>Model</th><th>Members</th><th>Mean high</th><th>Mean low</th><th>Rain</th><th>Wind mph</th><th>hPa</th><th>Days</th>" +
+      "<th>Model</th><th>Members</th><th>Mean high</th><th>Mean low</th><th>Rain</th>" +
+        "<th>Wind " + U.windUnit + "</th><th>" + U.presUnit + "</th><th>Days</th>" +
       "</tr></thead><tbody>" + html + "</tbody></table></div>";
   }
 
   /* ── written analysis ─────────────────────────────────────────────── */
   const describeTemp = t => t>=28?"hot":t>=24?"very warm":t>=20?"warm":t>=16?"pleasantly mild":t>=12?"cool":t>=7?"chilly":t>=3?"cold":"very cold";
-  const describeWind = w => w>=45?"gale-force":w>=32?"very strong":w>=24?"blustery":w>=16?"moderate":w>=9?"light":"near-calm";
+  /* Beaufort-ish descriptions. The thresholds are mph, so convert whatever
+     unit the API returned before comparing — otherwise a 45 km/h breeze gets
+     called "gale-force". */
+  const TO_MPH = { mph: 1, kmh: 0.621371, ms: 2.23694, kn: 1.15078 };
+  const describeWind = w => {
+    if (w == null) return "";
+    const m = w * (TO_MPH[String((CFG.units && CFG.units.wind) || "mph").toLowerCase()] || 1);
+    return m>=45?"gale-force":m>=32?"very strong":m>=24?"blustery":m>=16?"moderate":m>=9?"light":"near-calm";
+  };
   function spreadWord(s) {
     if (s < 2)   return ["very high","the members are tightly clustered"];
     if (s < 3.5) return ["high","the members agree closely"];
@@ -510,8 +521,8 @@ window.__ENSEMBLE__ = (function () {
       : meanP >= 1010 ? "pressure sits close to average — a mixed, changeable regime"
       : "low pressure dominates, so expect an unsettled Atlantic feed";
     const trend = Math.abs(dp) < 3 ? "Pressure holds roughly steady across the period."
-      : dp > 0 ? "Pressure builds by about " + r0(dp) + " hPa through the period, so conditions should turn quieter later on."
-      : "Pressure falls by about " + r0(Math.abs(dp)) + " hPa through the period, so things should turn more unsettled later on.";
+      : dp > 0 ? "Pressure builds by about " + U.dp(dp) + "  through the period, so conditions should turn quieter later on."
+      : "Pressure falls by about " + U.dp(Math.abs(dp)) + "  through the period, so things should turn more unsettled later on.";
 
     const perModel = nm.map(m => {
       const days = d.filter(x => x.byModel[m.id]);
@@ -527,33 +538,33 @@ window.__ENSEMBLE__ = (function () {
       const rHi = perModel.reduce((a,b) => b.rain > a.rain ? b : a), rLo = perModel.reduce((a,b) => b.rain < a.rain ? b : a);
       const rGap = rHi.rain - rLo.rain;
       agree = "<p><b>Model agreement.</b> " + perModel.length + " forecast centres are in this pool. " +
-        (gap < 0.8 ? "On temperature they are effectively saying the same thing (within " + r1(gap) + "°C of each other), which is a strong signal — independent models converging matters more than any single ensemble looking confident. "
-         : gap < 2 ? "On temperature they sit within " + r1(gap) + "°C of each other — normal, healthy scatter, with " + hi.m.short + " the warmest and " + lo.m.short + " the coolest. "
-         : "On temperature they differ by " + r1(gap) + "°C — <b>" + hi.m.short + " is materially warmer than " + lo.m.short + "</b>. That is a real disagreement about the pattern, not rounding, so treat the headline numbers as provisional. ") +
+        (gap < 0.8 ? "On temperature they are effectively saying the same thing (within " + U.dt(gap) + " of each other), which is a strong signal — independent models converging matters more than any single ensemble looking confident. "
+         : gap < 2 ? "On temperature they sit within " + U.dt(gap) + " of each other — normal, healthy scatter, with " + hi.m.short + " the warmest and " + lo.m.short + " the coolest. "
+         : "On temperature they differ by " + U.dt(gap) + " — <b>" + hi.m.short + " is materially warmer than " + lo.m.short + "</b>. That is a real disagreement about the pattern, not rounding, so treat the headline numbers as provisional. ") +
         (rGap < 3 ? "Rainfall totals are similarly consistent across centres."
-         : rGap < 8 ? "Rainfall totals vary a little more — " + r1(rHi.rain) + " mm from " + rHi.m.short + " against " + r1(rLo.rain) + " mm from " + rLo.m.short + ", which is ordinary scatter over this range."
-         : "Rainfall is where they really part company: " + rHi.m.short + " gives about " + r1(rHi.rain) + " mm against just " + r1(rLo.rain) + " mm from " + rLo.m.short + " — a big enough split that any specific rain plan should be checked again nearer the time.") +
+         : rGap < 8 ? "Rainfall totals vary a little more — " + U.r(rHi.rain) + " from " + rHi.m.short + " against " + U.r(rLo.rain) + " from " + rLo.m.short + ", which is ordinary scatter over this range."
+         : "Rainfall is where they really part company: " + rHi.m.short + " gives about " + U.r(rHi.rain) + " against just " + U.r(rLo.rain) + " from " + rLo.m.short + " — a big enough split that any specific rain plan should be checked again nearer the time.") +
         "</p>";
     }
 
     let out = "<p><b>Overview.</b> Pooling <b>" + totalMembers + " members</b> from " + nm.map(m => m.short).join(", ") +
-      ", the next " + n + " days give daytime highs averaging " + r1(tmax) + "°C and overnight lows around " + r1(tmin) +
-      "°C — broadly " + describeTemp(tmax) + " for the time of year. The warmest day looks like <b>" + dayName(warmest.date) +
-      "</b> at about " + r1(warmest.tmax.mean) + "°C" +
+      ", the next " + n + " days give daytime highs averaging " + U.t(tmax) + " and overnight lows around " + U.t(tmin) +
+      " — broadly " + describeTemp(tmax) + " for the time of year. The warmest day looks like <b>" + dayName(warmest.date) +
+      "</b> at about " + U.t(warmest.tmax.mean) +
       (Math.abs(warmest.tmax.mean - coldest.tmax.mean) > 2
-        ? ", the coolest <b>" + dayName(coldest.date) + "</b> near " + r1(coldest.tmax.mean) + "°C. "
+        ? ", the coolest <b>" + dayName(coldest.date) + "</b> near " + U.t(coldest.tmax.mean) + ". "
         : ", with little day-to-day variation. ") +
-      "Taking every member at its word, the outright envelope runs from a low of <b>" + r1(envLo) +
-      "°C</b> to a high of <b>" + r1(envHi) + "°C</b>, with the wettest single day on any member reaching " +
-      r1(envRain) + " mm — those are the outer edges, not the likely outcome. " +
+      "Taking every member at its word, the outright envelope runs from a low of <b>" + U.t(envLo) +
+      "</b> to a high of <b>" + U.t(envHi) + "</b>, with the wettest single day on any member reaching " +
+      U.r(envRain) + " — those are the outer edges, not the likely outcome. " +
       "Synoptically, " + regime + ".</p>";
 
-    out += "<p><b>Rainfall.</b> The pooled members put roughly <b>" + r1(totalMean) + " mm</b> on the period as a whole" +
-      (totalP90 > totalMean*1.6 ? ", though the wetter 10% of members go as high as " + r1(totalP90) + " mm — the risk is skewed towards more rain than the mean suggests. " : ". ") +
+    out += "<p><b>Rainfall.</b> The pooled members put roughly <b>" + U.r(totalMean) + "</b> on the period as a whole" +
+      (totalP90 > totalMean*1.6 ? ", though the wetter 10% of members go as high as " + U.r(totalP90) + " — the risk is skewed towards more rain than the mean suggests. " : ". ") +
       (wetDays ? "There " + (wetDays === 1 ? "is 1 day" : "are " + wetDays + " days") + " where a clear majority of members are wet" : "No single day has a clear wet signal") +
       (dryDays ? ", and " + dryDays + " that look reliably dry. " : ". ") +
       "The wettest signal is on <b>" + dayName(wettest.date) + "</b>, where " + Math.round(wettest.rain.prob*100) + "% of members produce measurable rain" +
-      (wettest.rain.probHeavy > 0.25 ? " and " + Math.round(wettest.rain.probHeavy*100) + "% produce 5 mm or more — worth watching." : ".") + "</p>";
+      (wettest.rain.probHeavy > 0.25 ? " and " + Math.round(wettest.rain.probHeavy*100) + "% produce " + U.r(5) + " or more — worth watching." : ".") + "</p>";
 
     out += "<p><b>Wind.</b> Winds are mostly " + describeWind(avg(d.map(x => x.wind.mean))) + ", peaking around " +
       r0(windiest.wind.mean) + " mph on <b>" + dayName(windiest.date) + "</b>" +
@@ -563,7 +574,7 @@ window.__ENSEMBLE__ = (function () {
     out += agree;
 
     out += "<p><b>Confidence: " + headline + ".</b> Across the period the pooled member range on daily maxima is about " +
-      r1(spread) + "°C — " + sw[1] + ". " +
+      U.dt(spread) + " — " + sw[1] + ". " +
       (tHi === 0 && rHi === 0
         ? "Day by day, no single day earns a high-confidence rating for either temperature or rainfall. "
         : "Day by day, temperature rates high-confidence on <b>" + tHi + " of " + d.length + "</b> days against <b>" +
@@ -589,11 +600,11 @@ window.__ENSEMBLE__ = (function () {
     const envHi = Math.max.apply(null, d.map(x => x.tmax.hi).filter(v => v != null));
     const envLo = Math.min.apply(null, d.map(x => x.tmin.lo).filter(v => v != null));
     return [
-      ["Mean high", r1(avg(d.map(x => x.tmax.mean))) + "°C"],
-      ["Envelope", r0(envLo) + "–" + r0(envHi) + "°C"],
-      ["Total rain", r1(total) + " mm"],
+      ["Mean high", U.t(avg(d.map(x => x.tmax.mean)))],
+      ["Envelope", U.tv(envLo,0) + "–" + U.tv(envHi,0) + U.tempUnit],
+      ["Total rain", U.r(total)],
       ["Wet days", wet + "/" + d.length],
-      ["Peak wind", r0(wind) + " mph"],
+      ["Peak wind", U.w(wind)],
       ["Members", String(S.data.temperature_2m.length)],
       ["Confidence", conf]
     ].map(k => "<div class='ens-kpi'><b>" + k[1] + "</b><span>" + k[0] + "</span></div>").join("");

@@ -260,22 +260,22 @@ window.__CLIMATE__ = (function () {
     const joint = f.rank.tied > 1 ? "joint " : "";
 
     const cards = [
-      { k: f.name + " " + f.year + " rainfall", v: r1(f.total) + " mm",
-        s: mPct != null ? r0(mPct) + "% of the " + r1(f.normal) + " mm normal" : "",
+      { k: f.name + " " + f.year + " rainfall", v: U.r(f.total),
+        s: mPct != null ? r0(mPct) + "% of the " + U.r(f.normal) + " normal" : "",
         cls: mPct != null && mPct < 40 ? "alarm" : "" },
       { k: f.name + " ranking", v: joint + ord(f.rank.pos) + " driest",
         s: "of " + f.rank.n + " years" + (f.complete ? " · last complete month" : " · 1st–" + s.curD),
         cls: f.rank.pos <= 3 ? "alarm" : "" },
-      { k: "Year to date", v: r0(ytd) + " mm",
+      { k: "Year to date", v: U.r(ytd, 0),
         s: yPct != null ? r0(yPct) + "% of normal · " + ord(s.yearRank.pos) + " driest of " + s.yearRank.n : "",
         cls: s.yearRank.pos <= 5 ? "alarm" : "" },
       { k: "Dry spell", v: s.drySpell + (s.drySpell === 1 ? " day" : " days"),
-        s: "since " + WET_DAY + " mm or more fell",
+        s: "since " + U.r(WET_DAY) + " or more fell",
         cls: s.drySpell >= 14 ? "alarm" : "" },
-      { k: "Today vs normal", v: (tAnom != null ? (tAnom > 0 ? "+" : "") + r1(tAnom) + "°C" : "–"),
-        s: s.todayNormalTmax != null ? "normal max " + r1(s.todayNormalTmax) + "°C" : "",
+      { k: "Today vs normal", v: (tAnom != null ? U.dtSigned(tAnom) : "–"),
+        s: s.todayNormalTmax != null ? "normal max " + U.t(s.todayNormalTmax) : "",
         cls: tAnom != null && tAnom >= 5 ? "alarm" : tAnom != null && tAnom <= -5 ? "cool" : "" },
-      { k: "Record for today", v: s.todayRecordTmax ? r1(s.todayRecordTmax.v) + "°C" : "–",
+      { k: "Record for today", v: s.todayRecordTmax ? U.t(s.todayRecordTmax.v) : "–",
         s: s.todayRecordTmax ? "set in " + s.todayRecordTmax.y : "" }
     ];
 
@@ -322,8 +322,8 @@ window.__CLIMATE__ = (function () {
     Highcharts.chart("clCumChart", {
       chart: { type: "line", height: h1 },
       xAxis: { tickPositions: ticks, labels: { formatter: function () { return labels[this.value] || ""; } } },
-      yAxis: { title: { text: "mm, cumulative" }, min: 0 },
-      tooltip: { shared: true, valueSuffix: " mm", valueDecimals: 0 },
+      yAxis: { title: { text: U.rainUnit + ", cumulative" }, min: 0 },
+      tooltip: { shared: true, valueSuffix: " " + U.rainUnit, valueDecimals: 0 },
       plotOptions: { series: { marker: { enabled: false }, animation: false } },
       series: series
     });
@@ -332,8 +332,8 @@ window.__CLIMATE__ = (function () {
     Highcharts.chart("clMonthChart", {
       chart: { type: "column", height: h2 },
       xAxis: { categories: mCats },
-      yAxis: { title: { text: "mm" }, min: 0 },
-      tooltip: { shared: true, valueSuffix: " mm", valueDecimals: 1 },
+      yAxis: { title: { text: U.rainUnit }, min: 0 },
+      tooltip: { shared: true, valueSuffix: " " + U.rainUnit, valueDecimals: 1 },
       series: [
         { name: "Normal", data: mCats.map((_,i) => s.monthlyNormal[i+1] != null ? +s.monthlyNormal[i+1].toFixed(1) : null),
           color: "#cbd5e1" },
@@ -345,8 +345,8 @@ window.__CLIMATE__ = (function () {
     Highcharts.chart("clTempChart", {
       chart: { type: "column", height: h2 },
       xAxis: { categories: mCats },
-      yAxis: { title: { text: "°C" } },
-      tooltip: { shared: true, valueSuffix: " °C", valueDecimals: 1 },
+      yAxis: { title: { text: U.tempUnit } },
+      tooltip: { shared: true, valueSuffix: " " + U.tempUnit, valueDecimals: 1 },
       series: [
         { name: "Normal max", data: mCats.map((_,i) => s.tmaxNormal[i+1] != null ? +s.tmaxNormal[i+1].toFixed(1) : null),
           color: "#cbd5e1" },
@@ -373,7 +373,7 @@ window.__CLIMATE__ = (function () {
         const isYou = e.y === curY;
         return "<tr class='" + (isYou ? "cl-rank-you" : "") + "'>" +
           "<td>" + ord(pos) + "</td><td>" + e.y + "</td>" +
-          "<td>" + r1(e.v) + " mm</td>" +
+          "<td>" + U.r(e.v) + "</td>" +
           "<td><span class='cl-bar' style='width:90px'><span style='width:" +
             (e.v/max*100).toFixed(0) + "%'></span></span></td></tr>";
       }).join("") + "</tbody></table></div>";
@@ -402,33 +402,33 @@ window.__CLIMATE__ = (function () {
     let out = "";
 
     /* rainfall for the featured month */
-    out += "<p><b>" + f.name + " " + f.year + ".</b> " + r1(f.total) + " mm " +
+    out += "<p><b>" + f.name + " " + f.year + ".</b> " + U.r(f.total) + " " +
       (f.complete ? "fell across the whole month"
                   : "has fallen between the 1st and the " + ord(s.curD)) +
-      ", against a " + BASE_FROM + "–" + BASE_TO + " normal of " + r1(f.normal) + " mm — " +
+      ", against a " + BASE_FROM + "–" + BASE_TO + " normal of " + U.r(f.normal) + " — " +
       (mPct != null ? "<b>" + r0(mPct) + "% of normal</b>" : "") + ". " +
       (mp === 1 && !joint
         ? "That makes it the <b>driest " + f.name + " in the " + mn + " years since " + FIRST_YEAR + "</b>" +
-          (runnerUp ? ", beating " + runnerUp.y + " which managed " + r1(runnerUp.v) + " mm." : ".")
+          (runnerUp ? ", beating " + runnerUp.y + " which managed " + U.r(runnerUp.v) + "." : ".")
         : mp === 1 && joint
         ? "That equals the <b>driest " + f.name + " on record</b> — " + f.rank.tied +
           " years in " + mn + " share the distinction, the next wettest being " +
-          (runnerUp ? runnerUp.y + " with " + r1(runnerUp.v) + " mm." : "close behind.")
+          (runnerUp ? runnerUp.y + " with " + U.r(runnerUp.v) + "." : "close behind.")
         : "That ranks <b>" + (joint ? "joint " : "") + ord(mp) + " driest of " + mn + "</b>" +
-          (f.rank.list[0] ? ", behind " + f.rank.list[0].y + " with " + r1(f.rank.list[0].v) + " mm." : ".")) +
+          (f.rank.list[0] ? ", behind " + f.rank.list[0].y + " with " + U.r(f.rank.list[0].v) + "." : ".")) +
       (!f.complete
         ? (s.wetDaysThisMonth === 0
-            ? " Not a single day this month has produced " + WET_DAY + " mm or more."
+            ? " Not a single day this month has produced " + U.r(WET_DAY) + " or more."
             : " Only " + s.wetDaysThisMonth + (s.wetDaysThisMonth === 1 ? " day" : " days") + " produced measurable rain.")
         : (s.mtdTotal != null
-            ? " " + MONTHS[s.curM-1] + " has since added " + r1(s.mtdTotal) + " mm in " + s.curD +
+            ? " " + MONTHS[s.curM-1] + " has since added " + U.r(s.mtdTotal) + " in " + s.curD +
               (s.curD === 1 ? " day." : " days.")
             : "")) +
       "</p>";
 
     /* the year as a whole */
-    out += "<p><b>The year so far.</b> " + r0(ytd) + " mm since 1 January, " +
-      (yPct != null ? "<b>" + r0(yPct) + "% of the " + r0(s.yearNormal) + " mm</b> that would be normal by now" : "") + ". " +
+    out += "<p><b>The year so far.</b> " + U.r(ytd, 0) + " since 1 January, " +
+      (yPct != null ? "<b>" + r0(yPct) + "% of the " + U.r(s.yearNormal, 0) + "</b> that would be normal by now" : "") + ". " +
       (yp === 1
         ? "<b>No year since " + s.firstYearInData + " has been drier to this date</b> — the driest start to a year in " + yn + " years of record."
         : yp <= 3
@@ -439,7 +439,7 @@ window.__CLIMATE__ = (function () {
     /* the dry spell */
     if (s.drySpell >= 5) {
       out += "<p><b>The current dry spell.</b> " + s.drySpell + " consecutive days without " + WET_DAY +
-        " mm. " +
+        ". " +
         (s.drySpell >= 30 ? "Anything past a month is exceptional in a maritime climate like Norfolk's — this is the kind of run that puts the East Anglian aquifers and the Ouse catchment under real strain."
          : s.drySpell >= 14 ? "Two weeks or more is the point at which shallow-rooted crops and lawns start to show it."
          : "Not yet remarkable, but worth watching if it extends.") + "</p>";
@@ -448,10 +448,10 @@ window.__CLIMATE__ = (function () {
     /* temperature */
     if (tAnom != null) {
       out += "<p><b>Temperature.</b> Today's maximum ran " +
-        (Math.abs(tAnom) < 1 ? "close to the seasonal normal of " + r1(s.todayNormalTmax) + "°C"
-          : "<b>" + r1(Math.abs(tAnom)) + "°C " + (tAnom > 0 ? "above" : "below") + "</b> the " +
-            r1(s.todayNormalTmax) + "°C normal for this date") + ". " +
-        (s.todayRecordTmax ? "The record for the date is " + r1(s.todayRecordTmax.v) + "°C, set in " + s.todayRecordTmax.y + ". " : "") +
+        (Math.abs(tAnom) < 1 ? "close to the seasonal normal of " + U.t(s.todayNormalTmax)
+          : "<b>" + U.dt(Math.abs(tAnom)) + " " + (tAnom > 0 ? "above" : "below") + "</b> the " +
+            U.t(s.todayNormalTmax) + " normal for this date") + ". " +
+        (s.todayRecordTmax ? "The record for the date is " + U.t(s.todayRecordTmax.v) + ", set in " + s.todayRecordTmax.y + ". " : "") +
         "Heat and drought reinforce each other: with the soil this dry there is little moisture left to evaporate, " +
         "so nearly all the sun's energy goes into heating the air rather than lifting water out of the ground.</p>";
     }

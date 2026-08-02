@@ -24,11 +24,19 @@ window.WXCONFIG = {
   elevation: 15,
 
   /* ── units ──────────────────────────────────────────────────────────
-     wind: "mph" | "kmh" | "ms" | "kn"
-     Temperature is °C and rainfall mm throughout; the panels' written
-     analysis is phrased around those, so changing them is not yet
-     supported.                                                          */
+     Everything is computed internally in metric and converted only for
+     display, so thresholds and rankings stay consistent whatever you pick.
+
+       temp:     "c" | "f"
+       rain:     "mm" | "in"
+       pressure: "mb" | "inhg"
+       wind:     "mph" | "kmh" | "ms" | "kn"
+
+     Omit any of them for metric.                                        */
   units: {
+    temp: "c",
+    rain: "mm",
+    pressure: "mb",
     wind: "mph"
   },
 

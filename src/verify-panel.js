@@ -26,7 +26,7 @@ window.__VERIFY__ = (function () {
   const $ = id => document.getElementById(id);
   const r1 = v => v == null || isNaN(v) ? "–" : (Math.round(v*10)/10).toFixed(1);
   const r2 = v => v == null || isNaN(v) ? "–" : (Math.round(v*100)/100).toFixed(2);
-  const sgn = v => v == null ? "–" : (v > 0 ? "+" : "") + r1(v);
+  const sgn = v => U.dtSigned(v);            // bias and error: differences
 
   const MODEL_NAMES = {
     best_match:    "Open-Meteo blend",
@@ -120,13 +120,13 @@ window.__VERIFY__ = (function () {
     /* headline cards */
     const cards = [];
     if (d1 && d1.tmax) {
-      cards.push({ k: "Day-ahead max error", v: r1(d1.tmax.mae) + "°C", s: "typical miss, either way" });
-      cards.push({ k: "Day-ahead bias", v: sgn(d1.tmax.bias) + "°C",
+      cards.push({ k: "Day-ahead max error", v: U.dt(d1.tmax.mae), s: "typical miss, either way" });
+      cards.push({ k: "Day-ahead bias", v: sgn(d1.tmax.bias),
         s: d1.tmax.bias < -0.3 ? "runs cold" : d1.tmax.bias > 0.3 ? "runs warm" : "no real lean",
         cls: d1.tmax.bias < -0.3 ? "vf-cold" : d1.tmax.bias > 0.3 ? "vf-warm" : "" });
     }
-    if (d3 && d3.tmax) cards.push({ k: "3 days ahead", v: r1(d3.tmax.mae) + "°C", s: "mean absolute error" });
-    if (d7 && d7.tmax) cards.push({ k: "7 days ahead", v: r1(d7.tmax.mae) + "°C", s: "mean absolute error" });
+    if (d3 && d3.tmax) cards.push({ k: "3 days ahead", v: U.dt(d3.tmax.mae), s: "mean absolute error" });
+    if (d7 && d7.tmax) cards.push({ k: "7 days ahead", v: U.dt(d7.tmax.mae), s: "mean absolute error" });
     if (d1 && d1.pod != null) cards.push({ k: "Rain detected", v: Math.round(d1.pod*100) + "%",
       s: "of wet days called a day ahead" });
     if (d1 && d1.far != null) cards.push({ k: "False alarms", v: Math.round(d1.far*100) + "%",
@@ -137,11 +137,11 @@ window.__VERIFY__ = (function () {
     /* table by lead time */
     const rows = (recent || []).map(L =>
       "<tr><td>" + L.lead + (L.lead === 1 ? " day" : " days") + "</td>" +
-      "<td>" + (L.tmax ? sgn(L.tmax.bias) + "°" : "–") + "</td>" +
-      "<td>" + (L.tmax ? r1(L.tmax.mae) + "°" : "–") + "</td>" +
-      "<td>" + (L.tmin ? sgn(L.tmin.bias) + "°" : "–") + "</td>" +
-      "<td>" + (L.tmin ? r1(L.tmin.mae) + "°" : "–") + "</td>" +
-      "<td>" + (L.rain ? sgn(L.rain.bias) + " mm" : "–") + "</td>" +
+      "<td>" + (L.tmax ? sgn(L.tmax.bias) : "–") + "</td>" +
+      "<td>" + (L.tmax ? U.dt(L.tmax.mae) : "–") + "</td>" +
+      "<td>" + (L.tmin ? sgn(L.tmin.bias) : "–") + "</td>" +
+      "<td>" + (L.tmin ? U.dt(L.tmin.mae) : "–") + "</td>" +
+      "<td>" + (L.rain ? U.r(L.rain.bias) : "–") + "</td>" +
       "<td>" + (L.pod != null ? Math.round(L.pod*100) + "%" : "–") + "</td>" +
       "<td>" + (L.far != null ? Math.round(L.far*100) + "%" : "–") + "</td>" +
       "<td>" + L.n + "</td></tr>").join("");
@@ -184,9 +184,9 @@ window.__VERIFY__ = (function () {
         "<tr" + (r.model === j.primary ? " style='font-weight:600'" : "") + ">" +
         "<td>" + (i === 0 ? "🏆 " : "") + modelName(r.model) +
           (r.model === j.primary ? "<span class='stat-at'>shown on this page</span>" : "") + "</td>" +
-        "<td>" + r1(r.tmax_mae) + "°C</td>" +
-        "<td>" + sgn(r.tmax_bias) + "°C</td>" +
-        "<td>" + (d3[r.model] != null ? r1(d3[r.model]) + "°C" : "–") + "</td>" +
+        "<td>" + U.dt(r.tmax_mae) + "</td>" +
+        "<td>" + sgn(r.tmax_bias) + "</td>" +
+        "<td>" + (d3[r.model] != null ? U.dt(d3[r.model]) : "–") + "</td>" +
         "<td>" + (r.pod != null ? Math.round(r.pod*100) + "%" : "–") + "</td>" +
         "<td>" + (r.far != null ? Math.round(r.far*100) + "%" : "–") + "</td>" +
         "<td>" + r.n + "</td></tr>").join("") +
@@ -201,16 +201,16 @@ window.__VERIFY__ = (function () {
     let out = "<p>";
 
     out += Math.abs(bias) < 0.4
-      ? "A day ahead the forecast shows <b>no meaningful bias</b> on maximum temperature — errors fall roughly evenly either side, averaging " + r1(mae) + "°C. "
-      : "A day ahead the forecast runs <b>" + r1(Math.abs(bias)) + "°C " + (bias < 0 ? "cold" : "warm") +
-        "</b> on maximum temperature, with a typical error of " + r1(mae) + "°C. " +
+      ? "A day ahead the forecast shows <b>no meaningful bias</b> on maximum temperature — errors fall roughly evenly either side, averaging " + U.dt(mae) + ". "
+      : "A day ahead the forecast runs <b>" + U.dt(Math.abs(bias)) + " " + (bias < 0 ? "cold" : "warm") +
+        "</b> on maximum temperature, with a typical error of " + U.dt(mae) + ". " +
         (bias < -0.8
           ? "A cold bias of this size during a drought is the expected failure: the model assumes more soil moisture than exists, so it spends energy evaporating water that isn't there instead of heating the air. "
           : "");
 
     if (last && last.tmax && d1.tmax) {
       const growth = last.tmax.mae / Math.max(d1.tmax.mae, 0.1);
-      out += "Error grows to " + r1(last.tmax.mae) + "°C by day " + last.lead +
+      out += "Error grows to " + U.dt(last.tmax.mae) + " by day " + last.lead +
         (growth > 2.5 ? " — a steep decay, so treat the back half of the ten days as pattern only. "
                       : " — a gentle decay, which is a sign of a well-behaved run of weather. ");
     }
@@ -229,10 +229,10 @@ window.__VERIFY__ = (function () {
       const gap = worst.tmax_mae - best.tmax_mae;
       out += "<p><b>Which model to believe here.</b> Over the last " + j.recent_days + " days " +
         "<b>" + modelName(best.model) + "</b> has been closest for this location, averaging " +
-        r1(best.tmax_mae) + "°C out on tomorrow's maximum against " + r1(worst.tmax_mae) + "°C for " +
+        U.dt(best.tmax_mae) + " out on tomorrow's maximum against " + U.dt(worst.tmax_mae) + " for " +
         modelName(worst.model) + ". " +
         (shown && shown.model !== best.model
-          ? "The page currently shows " + modelName(shown.model) + " at " + r1(shown.tmax_mae) + "°C" +
+          ? "The page currently shows " + modelName(shown.model) + " at " + U.dt(shown.tmax_mae) +
             (shown.tmax_mae - best.tmax_mae > 0.4
               ? " — a large enough gap to be worth switching the forecast source."
               : ", which is close enough that switching would not gain much.")
@@ -258,12 +258,12 @@ window.__VERIFY__ = (function () {
     Highcharts.chart("vfChart", {
       chart: { type: "line", height: w < 560 ? 200 : 240 },
       xAxis: { categories: s.map(p => p.date.slice(5)), tickInterval: Math.ceil(s.length/8) },
-      yAxis: { title: { text: "°C max" } },
-      tooltip: { shared: true, valueSuffix: " °C", valueDecimals: 1 },
+      yAxis: { title: { text: U.tempUnit + " max" } },
+      tooltip: { shared: true, valueSuffix: " " + U.tempUnit, valueDecimals: 1 },
       plotOptions: { series: { marker: { enabled: false }, animation: false } },
       series: [
-        { name: "Station measured", data: s.map(p => p.o_tmax), color: "var(--ink)", lineWidth: 2.5 },
-        { name: "Forecast, day ahead", data: s.map(p => p.f_tmax), color: "#d97706",
+        { name: "Station measured", data: s.map(p => U.axisTemp(p.o_tmax)), color: "var(--ink)", lineWidth: 2.5 },
+        { name: "Forecast, day ahead", data: s.map(p => U.axisTemp(p.f_tmax)), color: "#d97706",
           dashStyle: "ShortDash", lineWidth: 2 }
       ]
     });

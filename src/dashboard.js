@@ -648,10 +648,13 @@
       else { statusText = 'LIVE'; statusColor = 'var(--accent)'; } 
 
       const tempVal = num('outTemp_C', null);
-      const airTempText = tempVal !== null ? r1(tempVal) : "--";
-      const feelsLikeText = tempVal !== null ? r1(num('appTemp_C')) : "--";
-      const dewPointText = tempVal !== null ? r1(num('dewpoint_C')) : "--";
-      const humidexText = tempVal !== null ? r1(num('humidex_C')) : "--"; 
+      /* Values arrive from the station in metric and are converted only
+         here, for display. Everything computed below — trends, comfort
+         thresholds, the barograph — stays in °C and mb. */
+      const airTempText = tempVal !== null ? U.tv(tempVal) : "--";
+      const feelsLikeText = tempVal !== null ? U.tv(num('appTemp_C')) : "--";
+      const dewPointText = tempVal !== null ? U.tv(num('dewpoint_C')) : "--";
+      const humidexText = tempVal !== null ? U.tv(num('humidex_C')) : "--"; 
 
       const rainRate=num('rainRate_mm_per_hour'), rad=num('radiation_Wpm2');
       let cond = 'Clear night', glyph = 'moon';
@@ -689,7 +692,7 @@
       else if(trend3h < 0.4){state='STEADY'; arrow='→';}
       else if(trend3h < 1.5){state='RISING'; arrow='↗';}
       else {state='RISING FAST'; arrow='↑';}
-      const trendRateText = `${trend3h>0?'+':''}${trend3h.toFixed(1)} mb / 3h`; 
+      const trendRateText = (trend3h > 0 ? '+' : '') + U.dp(trend3h) + ' / 3h'; 
 
       let tempTrend3h = weewxTempTrendC !== null ? r1(weewxTempTrendC) : null;
       let tempState = 'STEADY', tempArrow = '→', tempTrendRateText = '—';
@@ -699,7 +702,7 @@
         else if (tempTrend3h < 0.8) { tempState = 'STEADY'; tempArrow = '→'; }
         else if (tempTrend3h < 3) { tempState = 'RISING'; tempArrow = '↗'; }
         else { tempState = 'RISING FAST'; tempArrow = '↑'; }
-        tempTrendRateText = `${tempTrend3h > 0 ? '+' : ''}${tempTrend3h.toFixed(1)}°C / 3h`;
+        tempTrendRateText = U.dtSigned(tempTrend3h) + ' / 3h';
       } 
 
       function nowcast(P, dP, windDeg){
@@ -778,14 +781,14 @@
         document.getElementById('feelsLike').textContent = feelsLikeText;
         document.getElementById('dewPoint').textContent = dewPointText;
         document.getElementById('humidex').textContent = humidexText;
-        document.getElementById('tempMin').textContent = liveTempMin;
-        document.getElementById('tempMax').textContent = liveTempMax;
+        document.getElementById('tempMin').textContent = (liveTempMin === '--' ? liveTempMin : U.tv(liveTempMin));
+        document.getElementById('tempMax').textContent = (liveTempMax === '--' ? liveTempMax : U.tv(liveTempMax));
         document.getElementById('tempTrendArrow').textContent = tempArrow;
         document.getElementById('tempTrendState').textContent = tempState;
         document.getElementById('tempTrendRate').textContent = tempTrendRateText;
         document.getElementById('condition').textContent = conditionalStatus;
         document.getElementById('heroGlyph').innerHTML = glyphSvgRaw;
-        document.getElementById('baroNow').textContent = r1(nowMB);
+        document.getElementById('baroNow').textContent = U.p(nowMB).replace(' ' + U.presUnit, '');
         document.getElementById('tendArrow').textContent = arrow;
         document.getElementById('tendState').textContent = state;
         document.getElementById('tendRate').textContent = trendRateText;
@@ -838,7 +841,7 @@
       const mobileWrap = document.getElementById('mobileLayout');
       if (window.innerWidth < 1024 && mobileWrap) {
         if(!document.getElementById('speedSvg_mob')) {
-          mobileWrap.innerHTML = `<header class="head"><div class="brand"><div class="name">${CFG.place || "Weather Station"}</div><div class="coords">${stationSubtitle()}</div></div><div class="clock"><div class="time" id="clockTime_mob">—:—</div><div class="dateline" id="clockDate_mob">——</div></div></header><section class="hero"><div class="hero-top"><div class="hero-glyph" id="heroGlyph_mob"></div><div class="hero-temp"><span id="airTemp_mob">--</span><span class="deg">°C</span></div></div><div class="hero-cond" id="condition_mob">Connecting...</div><div class="hero-extremes"><span class="hi-t">MAX <span id="tempMax_mob">--</span>°C</span><span class="lo-t">MIN <span id="tempMin_mob">--</span>°C</span><span class="trend-inline"><span id="tempTrendArrow_mob">→</span> <span id="tempTrendState_mob">STEADY</span> <span id="tempTrendRate_mob">—</span></span></div><div class="hero-sub"><div class="cell"><div class="lbl">Feels like</div><div class="val"><span id="feelsLike_mob">--</span><span class="u">°C</span></div></div><div class="cell"><div class="lbl">Dew point</div><div class="val"><span id="dewPoint_mob">--</span><span class="u">°C</span></div></div><div class="cell"><div class="lbl">Humidex</div><div class="val"><span id="humidex_mob">--</span><span class="u">°C</span></div></div></div></section><section class="baro"><div class="baro-head"><div class="eyebrow">Barometric pressure</div><div class="baro-read"><span id="baroNow_mob">----</span><span class="unit">mb · sea level</span><span class="trend-inline baro-trend-inline"><span id="tendArrow_mob">→</span> <span id="tendState_mob">STEADY</span> <span id="tendRate_mob">0.0 mb / 3h</span></span></div></div><div class="baro-chart"><svg id="baroSvg_mob" viewBox="0 0 960 360" preserveAspectRatio="none"></svg></div><div class="nowcast"><div class="nc-lbl">Tendency forecast · next 6–12 h</div><div class="nc-txt" id="nowcastText_mob">—</div></div></section><section class="wind"><div class="wind-dials" id="windDials_mob"><div class="compass"><svg id="speedSvg_mob" viewBox="0 0 480 480"></svg></div><div class="compass"><svg id="compassSvg_mob" viewBox="0 0 480 480"></svg></div></div><div class="wind-readout-row"><div class="wind-data-cell"><div class="lbl">Wind speed</div><div class="val"><span id="windSpeed_mob">--</span><span class="u"> mph</span></div><div class="sub-txt" id="beaufort_mob">—</div></div><div class="wind-data-cell"><div class="lbl">Direction</div><div class="val"><span id="windDir_text_mob">--</span></div></div><div class="wind-data-cell"><div class="lbl">Gust profile</div><div class="val"><span id="windGust_mob">--</span><span class="u"> mph</span></div></div></div></section><section class="tiles" id="tiles_mob"></section><footer class="foot"><span>SOURCE — MQTT weather feed</span><span id="footSun_mob">SUNRISE —:— · SUNSET —:—</span><span id="footStatus_mob">CONNECTING…</span><span id="footRefresh_mob">—</span><span class="foot-action" id="detailsTrigger_mob">HISTORY &amp; FORECAST ▸</span></footer>`; 
+          mobileWrap.innerHTML = `<header class="head"><div class="brand"><div class="name">${CFG.place || "Weather Station"}</div><div class="coords">${stationSubtitle()}</div></div><div class="clock"><div class="time" id="clockTime_mob">—:—</div><div class="dateline" id="clockDate_mob">——</div></div></header><section class="hero"><div class="hero-top"><div class="hero-glyph" id="heroGlyph_mob"></div><div class="hero-temp"><span id="airTemp_mob">--</span><span class="deg wx-unit-temp">°C</span></div></div><div class="hero-cond" id="condition_mob">Connecting...</div><div class="hero-extremes"><span class="hi-t">MAX <span id="tempMax_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="lo-t">MIN <span id="tempMin_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="trend-inline"><span id="tempTrendArrow_mob">→</span> <span id="tempTrendState_mob">STEADY</span> <span id="tempTrendRate_mob">—</span></span></div><div class="hero-sub"><div class="cell"><div class="lbl">Feels like</div><div class="val"><span id="feelsLike_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Dew point</div><div class="val"><span id="dewPoint_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Humidex</div><div class="val"><span id="humidex_mob">--</span><span class="u wx-unit-temp">°C</span></div></div></div></section><section class="baro"><div class="baro-head"><div class="eyebrow">Barometric pressure</div><div class="baro-read"><span id="baroNow_mob">----</span><span class="unit"><span class="wx-unit-pres">mb</span> · sea level</span><span class="trend-inline baro-trend-inline"><span id="tendArrow_mob">→</span> <span id="tendState_mob">STEADY</span> <span id="tendRate_mob">—</span></span></div></div><div class="baro-chart"><svg id="baroSvg_mob" viewBox="0 0 960 360" preserveAspectRatio="none"></svg></div><div class="nowcast"><div class="nc-lbl">Tendency forecast · next 6–12 h</div><div class="nc-txt" id="nowcastText_mob">—</div></div></section><section class="wind"><div class="wind-dials" id="windDials_mob"><div class="compass"><svg id="speedSvg_mob" viewBox="0 0 480 480"></svg></div><div class="compass"><svg id="compassSvg_mob" viewBox="0 0 480 480"></svg></div></div><div class="wind-readout-row"><div class="wind-data-cell"><div class="lbl">Wind speed</div><div class="val"><span id="windSpeed_mob">--</span><span class="u wx-unit-wind"> mph</span></div><div class="sub-txt" id="beaufort_mob">—</div></div><div class="wind-data-cell"><div class="lbl">Direction</div><div class="val"><span id="windDir_text_mob">--</span></div></div><div class="wind-data-cell"><div class="lbl">Gust profile</div><div class="val"><span id="windGust_mob">--</span><span class="u wx-unit-wind"> mph</span></div></div></div></section><section class="tiles" id="tiles_mob"></section><footer class="foot"><span>SOURCE — MQTT weather feed</span><span id="footSun_mob">SUNRISE —:— · SUNSET —:—</span><span id="footStatus_mob">CONNECTING…</span><span id="footRefresh_mob">—</span><span class="foot-action" id="detailsTrigger_mob">HISTORY &amp; FORECAST ▸</span></footer>`; 
 
           const mobileVectors = buildDialVectors(true);
           const speedSvgMob = document.getElementById('speedSvg_mob');
@@ -857,14 +860,15 @@
         document.getElementById('feelsLike_mob').textContent = feelsLikeText;
         document.getElementById('dewPoint_mob').textContent = dewPointText;
         document.getElementById('humidex_mob').textContent = humidexText;
-        document.getElementById('tempMin_mob').textContent = liveTempMin;
-        document.getElementById('tempMax_mob').textContent = liveTempMax;
+        document.getElementById('tempMin_mob').textContent = (liveTempMin === '--' ? liveTempMin : U.tv(liveTempMin));
+        document.getElementById('tempMax_mob').textContent = (liveTempMax === '--' ? liveTempMax : U.tv(liveTempMax));
+        labelUnits();   // the mobile layout is rebuilt on resize
         document.getElementById('tempTrendArrow_mob').textContent = tempArrow;
         document.getElementById('tempTrendState_mob').textContent = tempState;
         document.getElementById('tempTrendRate_mob').textContent = tempTrendRateText;
         document.getElementById('condition_mob').textContent = conditionalStatus;
         document.getElementById('heroGlyph_mob').innerHTML = glyphSvgRaw;
-        document.getElementById('baroNow_mob').textContent = r1(nowMB);
+        document.getElementById('baroNow_mob').textContent = U.p(nowMB).replace(' ' + U.presUnit, '');
         document.getElementById('tendArrow_mob').textContent = arrow;
         document.getElementById('tendState_mob').textContent = state;
         document.getElementById('tendRate_mob').textContent = trendRateText;
@@ -1008,6 +1012,15 @@
       pollTimer = setInterval(pollOnce, POLL_MS);
     }
 
+    /* Unit labels in the markup are placeholders; config decides what they
+       actually say. Called after any layout rebuild. */
+    function labelUnits() {
+      if (typeof U === "undefined") return;
+      document.querySelectorAll(".wx-unit-temp").forEach(e => e.textContent = U.tempUnit);
+      document.querySelectorAll(".wx-unit-wind").forEach(e => e.textContent = " " + U.windUnit);
+      document.querySelectorAll(".wx-unit-pres").forEach(e => e.textContent = U.presUnit);
+    }
+
     function bootloader() {
       /* label the desktop header from config */
       const nameEl = document.getElementById('stationName');
@@ -1016,6 +1029,7 @@
       if (coordEl) coordEl.textContent = stationSubtitle();
 
       render();
+      labelUnits();
       wireDetailOverlay();
       window.addEventListener('resize', render);
       setInterval(render, 1000); 

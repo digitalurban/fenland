@@ -150,6 +150,9 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `lat`, `lon` | yes | Decimal degrees, negative for S/W |
 | `timezone` | yes | IANA name, e.g. `Europe/London` |
 | `elevation`, `hardware` | no | Cosmetic, shown under the title |
+| `units.temp` | no | `c` or `f`. Default `c` |
+| `units.rain` | no | `mm` or `in`. Default `mm` |
+| `units.pressure` | no | `mb` or `inhg`. Default `mb` |
 | `units.wind` | no | `mph`, `kmh`, `ms`, `kn`. Default `mph` |
 | `mqtt` | no | Broker URL and topics — see below |
 | `pollSeconds` | no | JSON polling interval. Default 20 |
@@ -157,8 +160,11 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `ensembleModels` | no | Which ensembles to pool |
 | `climate.baselineFrom/To` | no | Default 1991–2020, the WMO normal |
 
-Temperature is °C and rainfall mm throughout. The written analysis is phrased
-around those, so Fahrenheit isn't supported yet.
+Everything is computed internally in metric and converted only for display, so
+thresholds, rankings and confidence ratings stay consistent whichever units you
+pick. Temperature differences (bias, anomaly, spread) convert correctly as
+differences rather than as temperatures — a −1.5 °C bias reads as −2.7 °F, not
+29.3 °F.
 
 ### Live data
 
