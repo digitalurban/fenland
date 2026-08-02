@@ -71,16 +71,36 @@ window.WXCONFIG = {
   /* How often to poll, in seconds, when using the JSON fallback.         */
   pollSeconds: 20,
 
+  /* ── what YOUR STATION publishes ────────────────────────────────────
+     Independent of `units` above, which is what the page DISPLAYS.
+
+     `units`        = what you want to read
+     `stationUnits` = what arrives in the MQTT or JSON feed
+
+     They do not have to match. A US station publishing °F can be shown in
+     Celsius, and a METRICWX station can be shown in Fahrenheit — Fenland
+     converts on the way in, and again on the way out.
+
+       temp:     "c" | "f"
+       rain:     "mm" | "in" | "cm"
+       pressure: "mb" | "inhg" | "kpa"
+       wind:     "mph" | "kmh" | "ms" | "kn"
+
+     Defaults are metric (mph for wind), matching weewx-mqtt publishing
+     METRICWX with `append_units_label = True`. A typical US setup:
+
+         stationUnits: { temp: "f", rain: "in", pressure: "inhg", wind: "mph" }
+
+     Getting this wrong is silent, not noisy — 21°C labelled 21°F looks
+     plausible. If your readings are consistently off, check here first.  */
+  // stationUnits: { temp: "c", rain: "mm", pressure: "mb", wind: "mph" },
+
   /* ── loop packet field names ────────────────────────────────────────
      Only needed if your MQTT payload uses different keys. Defaults match
      weewx-mqtt with `append_units_label = True` publishing METRICWX.
 
-     IMPORTANT: the values must be metric — °C, mm, mbar — regardless of
-     what you display in. Fenland converts for display only. In weewx.conf:
-
-         [[MQTT]]
-             unit_system = METRICWX
-             append_units_label = True
+     This maps NAMES only. If your station publishes in US units, say so in
+     `stationUnits` below — you do not have to reconfigure weeWX.
 
      Override only the names that differ:                                */
   // fields: {

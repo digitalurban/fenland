@@ -219,20 +219,32 @@ anything in `config.js` is public.
 **JSON polling** needs no broker at all: weeWX writes the loop packet to a file,
 the page fetches it on a timer. Slower, but far easier to set up.
 
-Either way the payload must be **metric** — °C, mm, mbar — whatever units you
-display in, because Fenland computes in metric and converts only at the point
-of display. One line in `weewx.conf` does it:
+Either way, tell Fenland what your station publishes and what you want to see —
+they are two separate settings and they don't have to agree:
 
-```
-[[MQTT]]
-    unit_system = METRICWX
-    append_units_label = True
+```js
+units:        { temp: "c", rain: "mm", pressure: "mb",   wind: "mph" },  // what you read
+stationUnits: { temp: "f", rain: "in", pressure: "inhg", wind: "mph" },  // what arrives
 ```
 
-That also produces the field names Fenland expects by default (`outTemp_C`,
-`windSpeed_mph` and so on). If you can't change what your station publishes —
-because Home Assistant or something else reads the same topic — remap the names
-with `fields` in `config.js` instead.
+That example is a US station displayed in Celsius. Reverse them for a metric
+station displayed in Fahrenheit. Both are optional and both default to metric,
+so a station publishing METRICWX needs neither.
+
+The reason they're separate is that everything in Fenland — the trend
+thresholds, the ensemble spread, the 86-year rankings — is computed in metric.
+Values are converted once on arrival and once for display, and nothing in
+between has to care.
+
+The **names** in the payload are a different question again. weewx-mqtt with
+`unit_system = METRICWX` and `append_units_label = True` produces exactly the
+keys Fenland expects (`outTemp_C`, `barometer_mbar`, `dayRain_mm`). Anything
+else — including US labels like `outTemp_F` — needs remapping with `fields` in
+`config.js`. There's a full list in `config.example.js`.
+
+One warning: getting `stationUnits` wrong is silent rather than noisy. 21°C
+labelled as °F reads as a cold day, not as an error. If the numbers look
+consistently wrong, check this before anything else.
 
 With both configured, MQTT is used and polling waits in reserve — if the broker
 goes unreachable for 90 seconds, the page falls back rather than sitting dead.

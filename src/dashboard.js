@@ -61,6 +61,41 @@
   const HISTORY_REFRESH_MS = 5 * 60 * 1000;
   const LIVE = (typeof window !== 'undefined' && window.__STATION__) ? window.__STATION__ : null;
 
+
+  /* ── what YOUR STATION publishes ──────────────────────────────────────
+     Separate from `units`, which is what the page DISPLAYS. A US station
+     publishing °F, inHg and inches can be displayed in metric, and a metric
+     station in Fahrenheit — the two are independent.
+
+     Values are converted to metric here, on the way in, because every
+     threshold and comparison in Fenland is written in metric. Display
+     conversion happens later, in units.js.                                */
+  const SU = Object.assign({ temp: "c", rain: "mm", pressure: "mb", wind: "mph" },
+                           CFG.stationUnits || {});
+  const _su = k => String(SU[k] || "").toLowerCase();
+
+  const inTemp2C = v => v == null ? v : (_su("temp") === "f" ? (v - 32) * 5 / 9 : v);
+  const inRain2mm = v => {
+    if (v == null) return v;
+    const u = _su("rain");
+    return u === "in" || u === "inch" ? v * 25.4 : u === "cm" ? v * 10 : v;
+  };
+  const inPres2mb = v => {
+    if (v == null) return v;
+    const u = _su("pressure");
+    return u === "inhg" || u === "in" ? v / 0.0295299830714 : u === "kpa" ? v * 10 : v;
+  };
+  /* Wind is the exception: it is never compared against a metric threshold,
+     so it only needs to reach the unit being displayed. */
+  const WIND_TO_MPH = { mph: 1, kmh: 0.621371, ms: 2.23694, kn: 1.15078 };
+  const MPH_TO_WIND = { mph: 1, kmh: 1.609344, ms: 0.44704, kn: 0.868976 };
+  const inWind = v => {
+    if (v == null) return v;
+    const from = WIND_TO_MPH[_su("wind")] || 1;
+    const to = MPH_TO_WIND[String((CFG.units && CFG.units.wind) || "mph").toLowerCase()] || 1;
+    return v * from * to;
+  };
+
   /* ── loop packet field names ──────────────────────────────────────────
      The keys Fenland looks for in the MQTT payload (or the polled JSON). The
      defaults match weewx-mqtt with `append_units_label = True` publishing
@@ -693,16 +728,16 @@
       } else if (secsAgo !== null && secsAgo > 120) { statusText = `STALE · NO DATA ${Math.round(secsAgo / 60)}M`; statusColor = 'var(--max-marker)'; }
       else { statusText = 'LIVE'; statusColor = 'var(--accent)'; } 
 
-      const tempVal = num(FIELD.temp, null);
+      const tempVal = inTemp2C(num(FIELD.temp, null));
       /* Values arrive from the station in metric and are converted only
          here, for display. Everything computed below — trends, comfort
          thresholds, the barograph — stays in °C and mb. */
       const airTempText = tempVal !== null ? U.tv(tempVal) : "--";
-      const feelsLikeText = tempVal !== null ? U.tv(num(FIELD.appTemp)) : "--";
-      const dewPointText = tempVal !== null ? U.tv(num(FIELD.dewpoint)) : "--";
-      const humidexText = tempVal !== null ? U.tv(num(FIELD.humidex)) : "--"; 
+      const feelsLikeText = tempVal !== null ? U.tv(inTemp2C(num(FIELD.appTemp))) : "--";
+      const dewPointText = tempVal !== null ? U.tv(inTemp2C(num(FIELD.dewpoint))) : "--";
+      const humidexText = tempVal !== null ? U.tv(inTemp2C(num(FIELD.humidex))) : "--"; 
 
-      const rainRate=num(FIELD.rainRate), rad=num(FIELD.radiation);
+      const rainRate=inRain2mm(num(FIELD.rainRate)), rad=num(FIELD.radiation);
       let cond = 'Clear night', glyph = 'moon';
       if (tempVal !== null) {
         if(rainRate>0){ cond = rainRate>2.5?'Rain':'Light rain'; glyph='rain'; }
@@ -721,7 +756,7 @@
       };
       const glyphSvgRaw = tempVal !== null ? (G[glyph] || '') : ''; 
 
-      const nowMB = num(FIELD.barometer);
+      const nowMB = inPres2mb(num(FIELD.barometer));
       let trend3h;
       if (weewxBaroTrendMb !== null) {
         trend3h = r1(weewxBaroTrendMb);
@@ -771,8 +806,8 @@
       const wDeg = isNaN(wDegRaw) ? null : wDegRaw;
       const nowcastOutput = nowcast(nowMB, trend3h, wDeg ?? 0); 
 
-      const wSpd=num(FIELD.windSpeed);
-      const wGust=data.windGust_mph?num(FIELD.windGust):num(FIELD.windGust10);
+      const wSpd=inWind(num(FIELD.windSpeed));
+      const wGust=data.windGust_mph?inWind(num(FIELD.windGust)):inWind(num(FIELD.windGust10));
       const compass16=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
       const dirName = wDeg !== null ? compass16[Math.round(wDeg/22.5)%16] : null;
       const beauNames=['Calm','Light air','Light breeze','Gentle breeze','Moderate breeze','Fresh breeze','Strong breeze','Near gale','Gale','Strong gale','Storm','Violent storm','Hurricane'];
@@ -791,8 +826,8 @@
       const uvBand = uv<3?'Low':uv<6?'Moderate':uv<8?'High':uv<11?'Very high':'Extreme';
       const uvPct = Math.min(uv,11)/11*100;
       const cloud = Math.round(num(FIELD.cloudbase));
-      const activeRainToday = parseFloat(data[FIELD.dayRain]) > 0;
-      const activeStormRain = parseFloat(data[FIELD.stormRain]) > 0; 
+      const activeRainToday = inRain2mm(parseFloat(data[FIELD.dayRain])) > 0;
+      const activeStormRain = inRain2mm(parseFloat(data[FIELD.stormRain])) > 0; 
 
       const aqiVal = liveAqi !== null ? Math.round(liveAqi) : null;
       const aqiBand = aqiVal===null ? '—' : aqiVal<=50?'Good' : aqiVal<=100?'Moderate' : aqiVal<=150?'Unhealthy (Sensitive)' : aqiVal<=200?'Unhealthy' : aqiVal<=300?'Very Unhealthy' : 'Hazardous';
@@ -802,12 +837,12 @@
       const aqiNote = aqiTrendText ? `${aqiBand} · ${aqiTrendText}` : aqiBand; 
 
       const tiles=[
-        {lbl:'Relative humidity', val:Math.round(num(FIELD.outHumidity)), unit:'%', note:`Indoor ${r1(num(FIELD.inTemp))}°C · ${Math.round(num(FIELD.inHumidity))}%`},
+        {lbl:'Relative humidity', val:Math.round(num(FIELD.outHumidity)), unit:'%', note:`Indoor ${r1(inTemp2C(num(FIELD.inTemp)))}°C · ${Math.round(num(FIELD.inHumidity))}%`},
         {lbl:'UV index', val:uv, unit:'', note:uvBand, uv:true},
         {lbl:'Solar radiation', val:Math.round(num(FIELD.radiation)), unit:'W/m²', note:'Shortwave'},
         {lbl:'Cloud base', val:cloud>=1000?(cloud/1000).toFixed(1):cloud, unit:cloud>=1000?'km':'m', note:'Est. LCL'},
-        {lbl:'Rain today', val: U.rv(num(FIELD.dayRain)), unit:U.rainUnit, note:`Rate ${r1(num(FIELD.rainRate))} mm/h`, isRain: activeRainToday},
-        {lbl:'Storm rain', val:r1(num(FIELD.stormRain)), unit:U.rainUnit, note:'Storm total', isRain: activeStormRain},
+        {lbl:'Rain today', val: U.rv(inRain2mm(num(FIELD.dayRain))), unit:U.rainUnit, note:`Rate ${r1(inRain2mm(num(FIELD.rainRate)))} mm/h`, isRain: activeRainToday},
+        {lbl:'Storm rain', val:r1(inRain2mm(num(FIELD.stormRain))), unit:U.rainUnit, note:'Storm total', isRain: activeStormRain},
         {lbl:'PM2.5', val:pm25Val===null?'--':pm25Val, unit:'µg/m³', note:'AirGradient'},
         {lbl:'Air quality', val:aqiVal===null?'--':aqiVal, unit:'', note:aqiNote, aqi:true},
         {lbl:'Lightning', val:liveLightningCount===null?'--':Math.round(liveLightningCount), unit:'', note: liveLightningDistance===null ? 'Strikes detected · Blitzortung' : `Nearest ${r1(liveLightningDistance)} km away`}
@@ -815,7 +850,7 @@
 
       let localHistory = [...pressureHistory];
       localHistory = localHistory.filter(p => p.minsAgo > 0);
-      if (!isNaN(parseFloat(data[FIELD.barometer]))) { localHistory.push({ minsAgo: 0, mb: parseFloat(data[FIELD.barometer]) }); }
+      if (!isNaN(inPres2mb(parseFloat(data[FIELD.barometer])))) { localHistory.push({ minsAgo: 0, mb: inPres2mb(parseFloat(data[FIELD.barometer])) }); }
       const mbs=localHistory.map(p=>p.mb);
       let lo = NaN, hi = NaN;
       if (localHistory.length > 0) {
