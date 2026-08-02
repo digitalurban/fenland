@@ -318,3 +318,22 @@
       .foot { grid-area: foot; border-top: 2px solid var(--ink); padding-top: calc(18 * var(--k)); flex-direction: row; justify-content: space-between; align-items: center; gap: 0; }
       .foot span { font-family: var(--mono); font-size: calc(16 * var(--k)); color: var(--slate); letter-spacing: .10em; }
     }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Responsive rules restored from the original single-file build.
+
+   These were lost when the page was split into modules — the split kept the
+   base rules but dropped most of the breakpoint overrides, which is why the
+   forecast text stopped reflowing on a phone. Extracted by diffing the two
+   builds rather than by eye. Do not fold these into the rules above; they
+   are overrides and depend on coming last.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  .aqibar { height: 10px; border: 1.5px solid var(--ink); margin-top: 6px; }
+  .aqibar .mark { top: -6px; border-left-width: 7px; border-right-width: 7px; border-top-width: 10px; transform: translateX(-7px); }
+  .aqibar .seg { width: 1.5px; }
+  .uvbar { height: 10px; border: 1.5px solid var(--ink); margin-top: 6px; }
+  .uvbar .mark { top: -6px; border-left-width: 7px; border-right-width: 7px; border-top-width: 10px; transform: translateX(-7px); }
+  .uvbar .seg { width: 1.5px; }
+}

@@ -176,3 +176,66 @@
     .wr-legend span { display: inline-flex; align-items: center; gap: 5px; }
     .wr-legend i { width: 10px; height: 10px; display: inline-block; }
     .wr-note { font-family: var(--mono); font-size: 10px; color: var(--mist); margin-top: 5px; text-align: center; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Responsive rules restored from the original single-file build.
+
+   These were lost when the page was split into modules — the split kept the
+   base rules but dropped most of the breakpoint overrides, which is why the
+   forecast text stopped reflowing on a phone. Extracted by diffing the two
+   builds rather than by eye. Do not fold these into the rules above; they
+   are overrides and depend on coming last.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  .chart-timespan-switch { flex-wrap: wrap; gap: 6px; }
+  .chart-timespan-switch button { min-height: 36px; }
+  .detail-close { flex: 0 0 auto; padding: 6px 0 6px 6px; }
+  .detail-tab { flex: 0 0 auto; padding: 9px 15px; font-size: 12.5px; }
+  .detail-tabs { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .detail-tabs::-webkit-scrollbar { display: none; }
+  .detail-topbar { align-items: center; gap: 8px; }
+  .ens-analysis { font-size: 13.5px; line-height: 1.55; }
+  .ens-chart { height: 210px; }
+  .ens-kpi { padding: 7px 9px; }
+  .ens-kpi b { font-size: 16px; }
+  .ens-kpis { grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 7px; }
+  .ens-legend { font-size: 9.5px; gap: 10px; }
+  .ens-model { padding: 7px 11px; }
+  .fc-day { min-height: 36px; }
+  .fc-detail-grid { grid-template-columns: repeat(auto-fit, minmax(98px, 1fr)); gap: 8px; }
+  .fc-fact .v { font-size: 15px; }
+  .fc-hour { min-width: 56px; }
+  .fc-now-facts { grid-template-columns: repeat(auto-fit, minmax(86px, 1fr)); gap: 8px; flex-basis: 100%; }
+  .fc-now-glyph { width: 56px; height: 56px; }
+  .fc-now-main { flex: 1 1 150px; min-width: 150px; }
+  .fc-refresh { min-height: 36px; }
+  .fc-statusbar { gap: 8px; }
+  .stats-table-scroll { -webkit-overflow-scrolling: touch; }
+  .tabs button { min-height: 36px; }
+  .wr-wrap svg { max-width: 380px; }
+}
+@media (max-width: 560px) {
+  .card { padding: 12px 12px; }
+  .chart-card-title { font-size: 14px; }
+  .detail-overlay { padding-left: 12px; padding-right: 12px; }
+  .ens-chart { height: 190px; }
+  .ens-kpi b { font-size: 15px; }
+  .ens-kpis { grid-template-columns: repeat(3, 1fr); }
+  .ens-note { font-size: 9px; }
+  .fc-day { padding: 8px 4px; }
+  .fc-day .d-g { width: 28px; height: 28px; margin: 4px auto; }
+  .fc-hour { min-width: 52px; padding: 7px 3px; }
+  .fc-now-desc { font-size: 15px; }
+  .fc-now-temp { font-size: 30px; }
+}
+
+/* Flex and grid children default to min-width:auto, so they refuse to shrink
+   below their content. One wide child (the ensemble day table is ~900px) then
+   stretches its whole column and the pane overflows sideways, clipping text on
+   a phone. These four were in the original build and were lost in the split —
+   they are the reason the forecast text stopped reflowing. */
+.fc-now > *,
+.fc-stack > *,
+.ens-stack > *,
+.kpis > * { min-width: 0; }
