@@ -20,3 +20,20 @@ top of the README. Worth capturing: the ensemble spaghetti with the models
 diverging, the forecast tab with the temperature line colour-banded, and the
 climate tab during something unusual — a drought or a heatwave makes the
 point far better than an average week.
+
+## Releasing a new version
+
+The version shown in the footer credit lives in `src/dashboard.js`:
+
+```js
+const FENLAND = { version: "1.0.0", url: "..." };
+```
+
+Bump it, tag the commit, and it appears on every installation's footer — which
+makes "what version are you running?" answerable from a screenshot rather than
+a conversation.
+
+```bash
+git tag -a v1.0.0 -m "First release"
+git push --tags
+```

@@ -20,6 +20,13 @@
     window.addEventListener('resize', applyScale);
     window.addEventListener('DOMContentLoaded', applyScale); 
 
+  /* Bump on release. Shown in the footer credit and worth quoting in any
+     bug report — "which version are you on" is the first question. */
+  const FENLAND = {
+    version: "1.0.0",
+    url: "https://github.com/digitalurban/fenland"
+  };
+
   /* ── configuration ────────────────────────────────────────────────────
      Everything below comes from config.js. Fenland supports two ways of
      getting live data:
@@ -841,7 +848,7 @@
       const mobileWrap = document.getElementById('mobileLayout');
       if (window.innerWidth < 1024 && mobileWrap) {
         if(!document.getElementById('speedSvg_mob')) {
-          mobileWrap.innerHTML = `<header class="head"><div class="brand"><div class="name">${CFG.place || "Weather Station"}</div><div class="coords">${stationSubtitle()}</div></div><div class="clock"><div class="time" id="clockTime_mob">—:—</div><div class="dateline" id="clockDate_mob">——</div></div></header><section class="hero"><div class="hero-top"><div class="hero-glyph" id="heroGlyph_mob"></div><div class="hero-temp"><span id="airTemp_mob">--</span><span class="deg wx-unit-temp">°C</span></div></div><div class="hero-cond" id="condition_mob">Connecting...</div><div class="hero-extremes"><span class="hi-t">MAX <span id="tempMax_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="lo-t">MIN <span id="tempMin_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="trend-inline"><span id="tempTrendArrow_mob">→</span> <span id="tempTrendState_mob">STEADY</span> <span id="tempTrendRate_mob">—</span></span></div><div class="hero-sub"><div class="cell"><div class="lbl">Feels like</div><div class="val"><span id="feelsLike_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Dew point</div><div class="val"><span id="dewPoint_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Humidex</div><div class="val"><span id="humidex_mob">--</span><span class="u wx-unit-temp">°C</span></div></div></div></section><section class="baro"><div class="baro-head"><div class="eyebrow">Barometric pressure</div><div class="baro-read"><span id="baroNow_mob">----</span><span class="unit"><span class="wx-unit-pres">mb</span> · sea level</span><span class="trend-inline baro-trend-inline"><span id="tendArrow_mob">→</span> <span id="tendState_mob">STEADY</span> <span id="tendRate_mob">—</span></span></div></div><div class="baro-chart"><svg id="baroSvg_mob" viewBox="0 0 960 360" preserveAspectRatio="none"></svg></div><div class="nowcast"><div class="nc-lbl">Tendency forecast · next 6–12 h</div><div class="nc-txt" id="nowcastText_mob">—</div></div></section><section class="wind"><div class="wind-dials" id="windDials_mob"><div class="compass"><svg id="speedSvg_mob" viewBox="0 0 480 480"></svg></div><div class="compass"><svg id="compassSvg_mob" viewBox="0 0 480 480"></svg></div></div><div class="wind-readout-row"><div class="wind-data-cell"><div class="lbl">Wind speed</div><div class="val"><span id="windSpeed_mob">--</span><span class="u wx-unit-wind"> mph</span></div><div class="sub-txt" id="beaufort_mob">—</div></div><div class="wind-data-cell"><div class="lbl">Direction</div><div class="val"><span id="windDir_text_mob">--</span></div></div><div class="wind-data-cell"><div class="lbl">Gust profile</div><div class="val"><span id="windGust_mob">--</span><span class="u wx-unit-wind"> mph</span></div></div></div></section><section class="tiles" id="tiles_mob"></section><footer class="foot"><span>SOURCE — MQTT weather feed</span><span id="footSun_mob">SUNRISE —:— · SUNSET —:—</span><span id="footStatus_mob">CONNECTING…</span><span id="footRefresh_mob">—</span><span class="foot-action" id="detailsTrigger_mob">HISTORY &amp; FORECAST ▸</span></footer>`; 
+          mobileWrap.innerHTML = `<header class="head"><div class="brand"><div class="name">${CFG.place || "Weather Station"}</div><div class="coords">${stationSubtitle()}</div></div><div class="clock"><div class="time" id="clockTime_mob">—:—</div><div class="dateline" id="clockDate_mob">——</div></div></header><section class="hero"><div class="hero-top"><div class="hero-glyph" id="heroGlyph_mob"></div><div class="hero-temp"><span id="airTemp_mob">--</span><span class="deg wx-unit-temp">°C</span></div></div><div class="hero-cond" id="condition_mob">Connecting...</div><div class="hero-extremes"><span class="hi-t">MAX <span id="tempMax_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="lo-t">MIN <span id="tempMin_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="trend-inline"><span id="tempTrendArrow_mob">→</span> <span id="tempTrendState_mob">STEADY</span> <span id="tempTrendRate_mob">—</span></span></div><div class="hero-sub"><div class="cell"><div class="lbl">Feels like</div><div class="val"><span id="feelsLike_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Dew point</div><div class="val"><span id="dewPoint_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Humidex</div><div class="val"><span id="humidex_mob">--</span><span class="u wx-unit-temp">°C</span></div></div></div></section><section class="baro"><div class="baro-head"><div class="eyebrow">Barometric pressure</div><div class="baro-read"><span id="baroNow_mob">----</span><span class="unit"><span class="wx-unit-pres">mb</span> · sea level</span><span class="trend-inline baro-trend-inline"><span id="tendArrow_mob">→</span> <span id="tendState_mob">STEADY</span> <span id="tendRate_mob">—</span></span></div></div><div class="baro-chart"><svg id="baroSvg_mob" viewBox="0 0 960 360" preserveAspectRatio="none"></svg></div><div class="nowcast"><div class="nc-lbl">Tendency forecast · next 6–12 h</div><div class="nc-txt" id="nowcastText_mob">—</div></div></section><section class="wind"><div class="wind-dials" id="windDials_mob"><div class="compass"><svg id="speedSvg_mob" viewBox="0 0 480 480"></svg></div><div class="compass"><svg id="compassSvg_mob" viewBox="0 0 480 480"></svg></div></div><div class="wind-readout-row"><div class="wind-data-cell"><div class="lbl">Wind speed</div><div class="val"><span id="windSpeed_mob">--</span><span class="u wx-unit-wind"> mph</span></div><div class="sub-txt" id="beaufort_mob">—</div></div><div class="wind-data-cell"><div class="lbl">Direction</div><div class="val"><span id="windDir_text_mob">--</span></div></div><div class="wind-data-cell"><div class="lbl">Gust profile</div><div class="val"><span id="windGust_mob">--</span><span class="u wx-unit-wind"> mph</span></div></div></div></section><section class="tiles" id="tiles_mob"></section><footer class="foot"><span>SOURCE — MQTT weather feed</span><span id="footSun_mob">SUNRISE —:— · SUNSET —:—</span><span id="footStatus_mob">CONNECTING…</span><span id="footRefresh_mob">—</span><span class="foot-action" id="detailsTrigger_mob">HISTORY &amp; FORECAST ▸</span><span class="foot-credit" id="footCredit_mob"></span></footer>`; 
 
           const mobileVectors = buildDialVectors(true);
           const speedSvgMob = document.getElementById('speedSvg_mob');
@@ -863,6 +870,7 @@
         document.getElementById('tempMin_mob').textContent = (liveTempMin === '--' ? liveTempMin : U.tv(liveTempMin));
         document.getElementById('tempMax_mob').textContent = (liveTempMax === '--' ? liveTempMax : U.tv(liveTempMax));
         labelUnits();   // the mobile layout is rebuilt on resize
+        renderCredit();
         document.getElementById('tempTrendArrow_mob').textContent = tempArrow;
         document.getElementById('tempTrendState_mob').textContent = tempState;
         document.getElementById('tempTrendRate_mob').textContent = tempTrendRateText;
@@ -1014,6 +1022,18 @@
 
     /* Unit labels in the markup are placeholders; config decides what they
        actually say. Called after any layout rebuild. */
+    /* A small credit in the footer, like Belchertown's. It is how anyone
+       looking at your site finds the skin. Set `credit: false` in config.js
+       to remove it — no hard feelings. */
+    function renderCredit() {
+      if (CFG.credit === false) return;
+      const html = '<a href="' + FENLAND.url + '" target="_blank" rel="noopener">FENLAND</a> v' + FENLAND.version;
+      ["footCredit", "footCredit_mob"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.innerHTML) el.innerHTML = html;
+      });
+    }
+
     function labelUnits() {
       if (typeof U === "undefined") return;
       document.querySelectorAll(".wx-unit-temp").forEach(e => e.textContent = U.tempUnit);
@@ -1030,6 +1050,7 @@
 
       render();
       labelUnits();
+      renderCredit();
       wireDetailOverlay();
       window.addEventListener('resize', render);
       setInterval(render, 1000); 

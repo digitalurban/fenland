@@ -40,6 +40,10 @@ window.WXCONFIG = {
     wind: "mph"
   },
 
+  /* Small "FENLAND v1.0.0" credit in the page footer, linking to the
+     project. It is how people find the skin — but set false to remove it. */
+  credit: true,
+
   /* ── hardware label ─────────────────────────────────────────────────
      Shown in the header after the coordinates, e.g. "DAVIS VANTAGE".     */
   hardware: "DAVIS VANTAGE",

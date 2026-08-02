@@ -173,6 +173,7 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `lat`, `lon` | yes | Decimal degrees, negative for S/W |
 | `timezone` | yes | IANA name, e.g. `Europe/London` |
 | `elevation`, `hardware` | no | Cosmetic, shown under the title |
+| `credit` | no | Small "FENLAND" footer link. `false` removes it |
 | `units.temp` | no | `c` or `f`. Default `c` |
 | `units.rain` | no | `mm` or `in`. Default `mm` |
 | `units.pressure` | no | `mb` or `inhg`. Default `mb` |
