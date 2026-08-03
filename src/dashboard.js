@@ -974,11 +974,9 @@
 
       const windSpeedText = tempVal !== null ? Math.round(wSpd) : "--";
       const windGustText = tempVal !== null ? Math.round(wGust) : "--";
-      /* compass point and bearing are marked up separately so the bearing can be
-         set a little smaller — together they then fit on one line */
+      /* One string, one size, as it always was. It stays on a single line via
+         `nowrap` and the wider dir-cell rather than by shrinking the bearing. */
       const windDirText = tempVal === null ? "--" : (wDeg !== null ? `${dirName} ${Math.round(wDeg)}°` : null);
-      const windDirHtml = tempVal === null ? "--"
-        : (wDeg !== null ? `${dirName}<span class="deg-num">${Math.round(wDeg)}°</span>` : null);
       const beaufortText = tempVal !== null ? `Force ${beau} · ${beauNames[beau]||''}` : "—"; 
 
       const uv=Math.round(num(FIELD.uv)*10)/10;
@@ -1039,7 +1037,7 @@
         document.getElementById('nowcastText').textContent = nowcastOutput;
         document.getElementById('windSpeed').textContent = windSpeedText;
         document.getElementById('windGust').textContent = windGustText;
-        if (windDirHtml !== null) document.getElementById('windDir_text').innerHTML = windDirHtml;
+        if (windDirText !== null) document.getElementById('windDir_text').textContent = windDirText;
         document.getElementById('beaufort').textContent = beaufortText; 
 
         const desktopVectors = buildDialVectors(false);
@@ -1121,7 +1119,7 @@
         document.getElementById('nowcastText_mob').textContent = nowcastOutput;
         document.getElementById('windSpeed_mob').textContent = windSpeedText;
         document.getElementById('windGust_mob').textContent = windGustText;
-        if (windDirHtml !== null) document.getElementById('windDir_text_mob').innerHTML = windDirHtml;
+        if (windDirText !== null) document.getElementById('windDir_text_mob').textContent = windDirText;
         document.getElementById('beaufort_mob').textContent = beaufortText; 
 
         if (wDeg !== null) {
