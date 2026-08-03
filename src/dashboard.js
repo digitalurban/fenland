@@ -977,6 +977,8 @@
       /* One string, one size, as it always was. It stays on a single line via
          `nowrap` and the wider dir-cell rather than by shrinking the bearing. */
       const windDirText = tempVal === null ? "--" : (wDeg !== null ? `${dirName} ${Math.round(wDeg)}°` : null);
+      const dayMaxText = dayExtreme(liveTempMax, tempVal, Math.max);
+      const dayMinText = dayExtreme(liveTempMin, tempVal, Math.min);
       const beaufortText = tempVal !== null ? `Force ${beau} · ${beauNames[beau]||''}` : "—"; 
 
       const uv=Math.round(num(FIELD.uv)*10)/10;
@@ -1023,8 +1025,8 @@
         document.getElementById('feelsLike').textContent = feelsLikeText;
         document.getElementById('dewPoint').textContent = dewPointText;
         document.getElementById('humidex').textContent = humidexText;
-        document.getElementById('tempMin').textContent = fmtDayMin();
-        document.getElementById('tempMax').textContent = fmtDayMax();
+        document.getElementById('tempMin').textContent = dayMinText;
+        document.getElementById('tempMax').textContent = dayMaxText;
         document.getElementById('tempTrendArrow').textContent = tempArrow;
         document.getElementById('tempTrendState').textContent = tempState;
         document.getElementById('tempTrendRate').textContent = tempTrendRateText;
@@ -1102,28 +1104,8 @@
         document.getElementById('feelsLike_mob').textContent = feelsLikeText;
         document.getElementById('dewPoint_mob').textContent = dewPointText;
         document.getElementById('humidex_mob').textContent = humidexText;
-        document.getElementById('tempMin_mob').textContent = fmtDayMin();
-        document.getElementById('tempMax_mob').textContent = fmtDayMax();
-
-          const mobileVectors = buildDialVectors(true);
-          const speedSvgMob = document.getElementById('speedSvg_mob');
-          if (speedSvgMob && !document.getElementById('speedNeedle_mob')) speedSvgMob.innerHTML = mobileVectors.speedStr; 
-
-          const compassSvgMob = document.getElementById('compassSvg_mob');
-          if (compassSvgMob && !document.getElementById('compassNeedle_mob')) compassSvgMob.innerHTML = mobileVectors.compassStr; 
-
-          wireWindZoom(document.getElementById('windDials_mob'));
-          wireDetailOverlay();
-        } 
-
-        document.getElementById('clockTime_mob').textContent = timeStr;
-        document.getElementById('clockDate_mob').textContent = dateStr;
-        document.getElementById('airTemp_mob').textContent = airTempText;
-        document.getElementById('feelsLike_mob').textContent = feelsLikeText;
-        document.getElementById('dewPoint_mob').textContent = dewPointText;
-        document.getElementById('humidex_mob').textContent = humidexText;
-        document.getElementById('tempMin_mob').textContent = (liveTempMin === '--' ? liveTempMin : U.tv(liveTempMin));
-        document.getElementById('tempMax_mob').textContent = (liveTempMax === '--' ? liveTempMax : U.tv(liveTempMax));
+        document.getElementById('tempMin_mob').textContent = dayMinText;
+        document.getElementById('tempMax_mob').textContent = dayMaxText;
         labelUnits();   // the mobile layout is rebuilt on resize
         applyNowcastSetting();
         renderCredit();
@@ -1306,18 +1288,18 @@
     }
 
     /* Day max and min arrive on their own MQTT topics, published on a slower
-       cadence than the loop packet. On a fast-rising morning the loop can
-       overtake the stored maximum, so the dashboard shows "25.1 now, max 24.7"
-       — which is not wrong so much as not yet true. Reconcile against the
-       live reading: a day's maximum cannot be below the current temperature. */
-    function dayExtreme(stored, pick) {
-      const now = liveTempC;
-      if (stored === '--' || stored == null) return now == null ? '--' : U.tv(now);
-      if (now == null || isNaN(now)) return U.tv(stored);
-      return U.tv(pick(stored, now));
+       cadence than the loop packet. On a fast-rising morning the live reading
+       overtakes the stored maximum, and the header reads "25.1 now, MAX 24.7"
+       — not wrong so much as not yet true. A day's maximum cannot be below the
+       current temperature, nor its minimum above it, so reconcile the two.
+       Takes the current value as an argument rather than reaching for a global:
+       the only reading that matters is the one this render pass is showing. */
+    function dayExtreme(stored, current, pick) {
+      const s = parseFloat(stored);
+      const c = (current == null || isNaN(current)) ? null : current;
+      if (isNaN(s)) return c == null ? "--" : U.tv(c);
+      return U.tv(c == null ? s : pick(s, c));
     }
-    const fmtDayMax = () => dayExtreme(liveTempMax, Math.max);
-    const fmtDayMin = () => dayExtreme(liveTempMin, Math.min);
 
     function labelUnits() {
       if (typeof U === "undefined") return;
