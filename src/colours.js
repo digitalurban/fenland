@@ -106,12 +106,31 @@ window.__WXCOLOURS__ = (function () {
     return null;   // humidity, direction, rain total, probability: left alone
   }
 
+  /* Highcharts draws the legend key in the series' base colour, which zones
+     never touch — so a value-coloured line got a legend swatch in the default
+     ink, and a yellow line was announced by a black key. There is no gradient
+     swatch available, so use the band the series actually spends most of its
+     time in: the median. It matches what the eye sees, and it moves with the
+     data — a cold week keys blue, a hot one orange. */
+  function medianZoneColour(s, z) {
+    const ys = (s.data || [])
+      .map(p => Array.isArray(p) ? p[1] : (p && typeof p === "object" ? p.y : p))
+      .filter(v => typeof v === "number" && isFinite(v))
+      .sort((a, b) => a - b);
+    if (!ys.length) return null;
+    const mid = ys[Math.floor(ys.length / 2)];
+    const band = z.find(x => x.value == null || mid <= x.value);
+    return band ? band.color : null;
+  }
+
   function decorate(s) {
     if (!s || s.zones || s.type === "scatter") return;   // never touch scatter or pre-zoned series
     const scale = scaleFor(s.name);
     if (!scale) return;
     s.zoneAxis = "y";
     s.zones = zones(scale);
+    const key = medianZoneColour(s, s.zones);
+    if (key) s.color = key;
   }
 
   /* ── fill in series the page asks for but never plots ─────────────── */
