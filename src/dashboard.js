@@ -370,12 +370,37 @@
       return v;
     }
 
+    /* Tipping-bucket gauges occasionally report an impossible instantaneous
+       rate — two tips microseconds apart, or a counter rolling over. A single
+       13,107 mm/hr spike (65535/5) drags the axis to 15k and flattens every
+       real reading to a flat line, so one bad sample destroys a year of good
+       ones. Points above the sanity limit are dropped, not clamped: inventing
+       a plausible number would be worse than showing a gap. The world record
+       is ~305 mm in an hour, so 500 leaves generous headroom.
+       Set `maxRainRate: null` in config.js to plot everything regardless.    */
+    const RAIN_RATE_LIMIT = CFG.maxRainRate === null ? Infinity : (CFG.maxRainRate || 500);
+    let rainRateWarned = false;
+
     function seriesPoints(chartObj, key, scale) {
       const s = chartObj?.series?.[key];
       if (!s || !Array.isArray(s.data)) return [];
-      return s.data
-        .filter(p => p[1] !== null && p[1] !== undefined)
+      let dropped = 0, worst = 0;
+      const out = s.data
+        .filter(p => {
+          if (p[1] === null || p[1] === undefined) return false;
+          if (key === "rainRate" && Math.abs(p[1]) > RAIN_RATE_LIMIT) {
+            dropped++; worst = Math.max(worst, Math.abs(p[1])); return false;
+          }
+          return true;
+        })
         .map(p => scale ? [p[0], toDisplay(scale, p[1])] : p);
+      if (dropped && !rainRateWarned) {
+        rainRateWarned = true;
+        console.warn("Fenland: ignored " + dropped + " impossible rain-rate reading(s), "
+          + "peaking at " + Math.round(worst) + " mm/hr — almost certainly a gauge "
+          + "artefact rather than weather. Raise or disable with `maxRainRate` in config.js.");
+      }
+      return out;
     } 
 
     async function renderCharts(span) {

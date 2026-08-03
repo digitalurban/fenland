@@ -211,6 +211,7 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `climate.baselineFrom/To` | no | Default 1991–2020, the WMO normal |
 | `climate.firstYear` | no | Start of the record. Default 1940, the ERA5 limit |
 | `nowcast` | no | Barometric tendency line. `false` hides it — see below |
+| `maxRainRate` | no | Ignore impossible gauge spikes above this mm/hr. Default 500, `null` disables |
 
 Everything is computed internally in metric and converted only for display, so
 thresholds, rankings and confidence ratings stay consistent whichever units you
