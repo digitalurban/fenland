@@ -6,7 +6,7 @@ ensemble, 16-day forecast and climatology back to 1940.
 **[Live demo](https://digitalurban.github.io/fenland/)** ·
 [Install](#install) · [Configuration](#configuration) · [weeWX notes](weewx/README.md)
 
-![Fenland dashboard](docs/img/dashboard.jpg)
+<a href="docs/img/dashboard.jpg"><img src="docs/img/dashboard.jpg" width="900" alt="Fenland dashboard"></a>
 
 Fenland is a front end, not a data logger. weeWX does the hard work of talking
 to your station; this shows it, and adds the forecast side that weeWX skins
@@ -22,7 +22,7 @@ forecast, ensemble and climate tabs work on their own.
 
 ### Live dashboard
 
-<img src="docs/img/gauges.jpg" width="480" align="right" alt="Wind gauges">
+<a href="docs/img/gauges.jpg"><img src="docs/img/gauges.jpg" width="460" align="right" alt="Wind gauges"></a>
 
 Hand-drawn SVG instruments — wind speed with Beaufort banding, a compass with a
 needle that takes the short way round, a rolling barograph with a tendency
@@ -38,7 +38,7 @@ mobile layout on a phone.
 
 ### Forecast
 
-![Forecast tab](docs/img/forecast.jpg)
+<a href="docs/img/forecast.jpg"><img src="docs/img/forecast.jpg" width="900" alt="Forecast tab"></a>
 
 Open-Meteo's best-match run, hourly to 16 days, with the temperature line
 colour-banded by value. Fourteen day cards that expand to full detail, an hourly
@@ -51,7 +51,7 @@ station, it flags when your gauge has already beaten the forecast maximum.
 
 ### Ensemble
 
-![Ensemble tab](docs/img/ensemble.jpg)
+<a href="docs/img/ensemble.jpg"><img src="docs/img/ensemble.jpg" width="900" alt="Ensemble tab"></a>
 
 120+ members from ECMWF, NOAA GEFS and DWD ICON pooled into one view, coloured
 by forecast centre so an outlier model is obvious at a glance. Day-by-day
@@ -64,7 +64,7 @@ The written analysis is generated from the live spread on every load.
 
 ### Climate
 
-![Climate tab](docs/img/climate.jpg)
+<a href="docs/img/climate.jpg"><img src="docs/img/climate.jpg" width="900" alt="Climate tab"></a>
 
 ERA5 reanalysis from 1940 to today for your coordinates, so the page can say
 how unusual today is rather than just what it is: *"the driest July in the 87 years

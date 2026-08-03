@@ -1023,8 +1023,8 @@
         document.getElementById('feelsLike').textContent = feelsLikeText;
         document.getElementById('dewPoint').textContent = dewPointText;
         document.getElementById('humidex').textContent = humidexText;
-        document.getElementById('tempMin').textContent = (liveTempMin === '--' ? liveTempMin : U.tv(liveTempMin));
-        document.getElementById('tempMax').textContent = (liveTempMax === '--' ? liveTempMax : U.tv(liveTempMax));
+        document.getElementById('tempMin').textContent = fmtDayMin();
+        document.getElementById('tempMax').textContent = fmtDayMax();
         document.getElementById('tempTrendArrow').textContent = tempArrow;
         document.getElementById('tempTrendState').textContent = tempState;
         document.getElementById('tempTrendRate').textContent = tempTrendRateText;
@@ -1084,6 +1084,26 @@
       if (window.innerWidth < 1024 && mobileWrap) {
         if(!document.getElementById('speedSvg_mob')) {
           mobileWrap.innerHTML = `<header class="head"><div class="brand"><div class="name">${CFG.place || "Weather Station"}</div><div class="coords">${stationSubtitle()}</div></div><div class="clock"><div class="time" id="clockTime_mob">—:—</div><div class="dateline" id="clockDate_mob">——</div></div></header><section class="hero"><div class="hero-top"><div class="hero-glyph" id="heroGlyph_mob"></div><div class="hero-temp"><span id="airTemp_mob">--</span><span class="deg wx-unit-temp">°C</span></div></div><div class="hero-cond" id="condition_mob">Connecting...</div><div class="hero-extremes"><span class="hi-t">MAX <span id="tempMax_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="lo-t">MIN <span id="tempMin_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="trend-inline"><span id="tempTrendArrow_mob">→</span> <span id="tempTrendState_mob">STEADY</span> <span id="tempTrendRate_mob">—</span></span></div><div class="hero-sub"><div class="cell"><div class="lbl">Feels like</div><div class="val"><span id="feelsLike_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Dew point</div><div class="val"><span id="dewPoint_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Humidex</div><div class="val"><span id="humidex_mob">--</span><span class="u wx-unit-temp">°C</span></div></div></div></section><section class="baro"><div class="baro-head"><div class="eyebrow">Barometric pressure</div><div class="baro-read"><span id="baroNow_mob">----</span><span class="unit"><span class="wx-unit-pres">mb</span> · sea level</span><span class="trend-inline baro-trend-inline"><span id="tendArrow_mob">→</span> <span id="tendState_mob">STEADY</span> <span id="tendRate_mob">—</span></span></div></div><div class="baro-chart"><svg id="baroSvg_mob" viewBox="0 0 960 360" preserveAspectRatio="none"></svg></div><div class="nowcast"><div class="nc-lbl">Tendency forecast · next 6–12 h</div><div class="nc-txt" id="nowcastText_mob">—</div></div></section><section class="wind"><div class="wind-dials" id="windDials_mob"><div class="compass"><svg id="speedSvg_mob" viewBox="0 0 480 480"></svg></div><div class="compass"><svg id="compassSvg_mob" viewBox="0 0 480 480"></svg></div></div><div class="wind-readout-row"><div class="wind-data-cell"><div class="lbl">Wind speed</div><div class="val"><span id="windSpeed_mob">--</span><span class="u wx-unit-wind"> mph</span></div><div class="sub-txt" id="beaufort_mob">—</div></div><div class="wind-data-cell dir-cell"><div class="lbl">Direction</div><div class="val"><span id="windDir_text_mob">--</span></div></div><div class="wind-data-cell"><div class="lbl">Gust profile</div><div class="val"><span id="windGust_mob">--</span><span class="u wx-unit-wind"> mph</span></div></div></div></section><section class="tiles" id="tiles_mob"></section><footer class="foot"><span>SOURCE — MQTT weather feed</span><span id="footSun_mob">SUNRISE —:— · SUNSET —:—</span><span id="footStatus_mob">CONNECTING…</span><span id="footRefresh_mob">—</span><span class="foot-action" id="detailsTrigger_mob">HISTORY &amp; FORECAST ▸</span><span class="foot-credit" id="footCredit_mob"></span></footer>`; 
+
+          const mobileVectors = buildDialVectors(true);
+          const speedSvgMob = document.getElementById('speedSvg_mob');
+          if (speedSvgMob && !document.getElementById('speedNeedle_mob')) speedSvgMob.innerHTML = mobileVectors.speedStr; 
+
+          const compassSvgMob = document.getElementById('compassSvg_mob');
+          if (compassSvgMob && !document.getElementById('compassNeedle_mob')) compassSvgMob.innerHTML = mobileVectors.compassStr; 
+
+          wireWindZoom(document.getElementById('windDials_mob'));
+          wireDetailOverlay();
+        } 
+
+        document.getElementById('clockTime_mob').textContent = timeStr;
+        document.getElementById('clockDate_mob').textContent = dateStr;
+        document.getElementById('airTemp_mob').textContent = airTempText;
+        document.getElementById('feelsLike_mob').textContent = feelsLikeText;
+        document.getElementById('dewPoint_mob').textContent = dewPointText;
+        document.getElementById('humidex_mob').textContent = humidexText;
+        document.getElementById('tempMin_mob').textContent = fmtDayMin();
+        document.getElementById('tempMax_mob').textContent = fmtDayMax();
 
           const mobileVectors = buildDialVectors(true);
           const speedSvgMob = document.getElementById('speedSvg_mob');
@@ -1284,6 +1304,20 @@
         el.setAttribute("title", note);
       });
     }
+
+    /* Day max and min arrive on their own MQTT topics, published on a slower
+       cadence than the loop packet. On a fast-rising morning the loop can
+       overtake the stored maximum, so the dashboard shows "25.1 now, max 24.7"
+       — which is not wrong so much as not yet true. Reconcile against the
+       live reading: a day's maximum cannot be below the current temperature. */
+    function dayExtreme(stored, pick) {
+      const now = liveTempC;
+      if (stored === '--' || stored == null) return now == null ? '--' : U.tv(now);
+      if (now == null || isNaN(now)) return U.tv(stored);
+      return U.tv(pick(stored, now));
+    }
+    const fmtDayMax = () => dayExtreme(liveTempMax, Math.max);
+    const fmtDayMin = () => dayExtreme(liveTempMin, Math.min);
 
     function labelUnits() {
       if (typeof U === "undefined") return;
