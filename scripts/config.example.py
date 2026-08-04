@@ -67,5 +67,14 @@ WET = 0.2                        # mm, the threshold for "it rained"
 #
 #   6m mast -> about 1.17   |   8m mast -> about 1.08
 #
+# Mast height above ground in metres, and the roughness of the ground around
+# it. With these, the panel can tell you how much of a low reading is height
+# (worth correcting) and how much is shelter (not), and suggest a figure.
+#
+#   ROUGHNESS: 0.03 open grass | 0.1 crops | 0.3 hedges | 0.5 trees/buildings
+#
+# MAST_HEIGHT = 6
+# ROUGHNESS = 0.30
+
 # WIND_SCALE = 1.17
 # GUST_SCALE = 1.17          # defaults to WIND_SCALE

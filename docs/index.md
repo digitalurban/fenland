@@ -455,6 +455,60 @@ Setup in [docs/verification.md](docs/verification.md).
 
 ---
 
+### Does your anemometer need a scale factor?
+
+Almost every amateur station reads below the official 10 m reference, and most
+owners eventually wonder whether to correct it. weeWX and Cumulus both offer a
+multiplier for exactly this. Fenland will work out whether you need one, and
+how much — but only after it has watched your station for a couple of months.
+
+**Two different things make a station read low, and only one is worth
+correcting.**
+
+*Height* is physics. An anemometer below 10 m sees less wind, by a knowable
+amount. Standardising for it is ordinary meteorological practice.
+
+| Mast height | Reads (typical garden) | Factor |
+|---|---|---|
+| 4 m | 0.79 | 1.27 |
+| 6 m | 0.85 | 1.17 |
+| 8 m | 0.93 | 1.07 |
+| 10 m | 1.00 | none needed |
+
+*Shelter* is not. Trees, hedges and buildings upwind mean there genuinely is
+less wind at your site. Scaling that away doesn't standardise your data — it
+makes it agree with a model while disagreeing with reality.
+
+**Fenland separates them.** Tell it your mast height:
+
+```python
+# scripts/config.py
+MAST_HEIGHT = 6        # metres above ground
+ROUGHNESS   = 0.30     # 0.03 open grass · 0.1 crops · 0.3 hedges · 0.5 trees
+```
+
+After 60 days of paired readings the verification panel reports something like:
+
+> **Suggested wind scale ×1.17**
+> Reads 68% of the 10 m reference, so a factor of 1.47 would match it exactly.
+> Of that, 1.17 is mast height (36% of the shortfall) and 1.25 is local
+> shelter. Recommended: 1.17 — correct the height, leave the shelter alone.
+
+**Applying it.** In `config.js`, `windScale: 1.17` corrects the display only —
+your weeWX archive stays exactly what the instrument measured, so the
+correction can be changed or removed at any time, and the footer states the
+factor rather than passing an adjusted number off as raw. If you would rather
+correct at source, use the weeWX or Cumulus offset instead; just be aware that
+rewrites your archive permanently and puts a step in your own history.
+
+**Testing before committing.** Set `WIND_SCALE` in `scripts/config.py` to the
+figure you are considering and the league table scores it as its own column,
+beside the factor measured from your own data. Whichever column shows the
+lower error is the better fit — which turns the question into a measurement
+rather than an argument.
+
+---
+
 ### Anemometer health
 
 `verify.py` also watches the anemometer. Each night it records the station's
@@ -501,7 +555,7 @@ Open-Meteo's paid tier.
 
 ## Status and roadmap
 
-Version 1.7.0. Running in production at
+Version 1.8.0. Running in production at
 [digitalurban.github.io/fenland](https://digitalurban.github.io/fenland/), which
 is also the demo — so if the demo is broken, so is the author's weather station.
 

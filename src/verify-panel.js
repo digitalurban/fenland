@@ -194,7 +194,7 @@ window.__VERIFY__ = (function () {
         "<td>" + (r.pod != null ? Math.round(r.pod*100) + "%" : "–") + "</td>" +
         "<td>" + (r.far != null ? Math.round(r.far*100) + "%" : "–") + "</td>" +
         "<td>" + r.n + "</td></tr>").join("") +
-      "</tbody></table></div>" + siteFactorNote(j);
+      "</tbody></table></div>" + siteFactorNote(j) + windScaleAdvice(j);
   }
 
   /* Wind is scored against a 10m equivalent, not against the raw reading.
@@ -227,6 +227,30 @@ window.__VERIFY__ = (function () {
       "BUILDINGS \u2014 SO READINGS ARE DIVIDED BY " + f.speed.toFixed(2) +
       " BEFORE COMPARING, OR EVERY MODEL WOULD SHOW THE SAME LARGE NEGATIVE BIAS THAT " +
       "MEASURES THE MAST RATHER THAN THE FORECAST." + scaleNote + pending + "</div>";
+  }
+
+  /* What correction, if any, this station should apply — and why not more. */
+  function windScaleAdvice(j) {
+    const a = j.wind_scale_advice;
+    if (!a) return "";
+    if (a.status === "collecting") {
+      return "<div class='cl-note' style='margin-top:6px'>WIND CORRECTION ADVICE: " +
+             a.days + " OF " + a.days_needed + " DAYS COLLECTED.</div>";
+    }
+    const head = a.recommended
+      ? "SUGGESTED WIND SCALE &nbsp;<b style='font-size:1.15em'>&times;" +
+        Number(a.recommended).toFixed(2) + "</b>"
+      : "WIND SCALE &mdash; NO CORRECTION RECOMMENDED";
+    return "<div class='vf-hero' style='margin-top:12px;display:block'>" +
+      "<div class='fc-status' style='margin-bottom:4px'>" + head + "</div>" +
+      "<div class='ens-analysis'>" + String(a.note || "") + "</div>" +
+      (a.recommended
+        ? "<div class='cl-note' style='margin-top:6px'>SET <code>windScale: " +
+          Number(a.recommended).toFixed(2) + "</code> IN CONFIG.JS TO APPLY IT TO THE " +
+          "DISPLAY, OR THE EQUIVALENT OFFSET IN WEEWX OR CUMULUS TO APPLY IT AT SOURCE. " +
+          "BASED ON " + a.days + " DAYS.</div>"
+        : "") +
+      "</div>";
   }
 
   function narrative(j, recent) {

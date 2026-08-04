@@ -34,6 +34,7 @@ import time
 import json
 import ftplib
 import datetime as dt
+import math
 
 import requests
 
@@ -88,6 +89,13 @@ PRIMARY = getattr(config, "PRIMARY", "best_match")
 # you can see whether it fits your site better than the empirical one.
 WIND_SCALE = getattr(config, "WIND_SCALE", None)
 GUST_SCALE = getattr(config, "GUST_SCALE", WIND_SCALE)
+
+# Height of the anemometer above ground, in metres, and the roughness of the
+# ground around it. Together these let the script work out how much of a low
+# reading is simply height — the part worth correcting — and how much is
+# local shelter, which is not.
+MAST_HEIGHT = getattr(config, "MAST_HEIGHT", None)
+ROUGHNESS = getattr(config, "ROUGHNESS", 0.30)
 
 
 
@@ -428,6 +436,73 @@ def site_wind_factor(store):
     return _median(spd), (_median(gst) if len(gst) >= 30 else _median(spd))
 
 
+def wind_scale_advice(store):
+    """Work out what wind correction, if any, this station should apply.
+
+    Two different things make a station read below the 10m reference, and
+    only one of them is worth correcting:
+
+      * HEIGHT. An anemometer at 6m sees less wind than one at 10m, by a
+        known amount. Standardising for it is ordinary practice, and it is
+        what the offsets in weeWX and Cumulus are for.
+
+      * SHELTER. Trees, buildings and hedges upwind. That is genuinely less
+        wind at your site. Scaling it away does not standardise anything —
+        it just makes your numbers agree with a model.
+
+    The measured deficit contains both. Knowing the mast height lets them be
+    separated, so this recommends only the height part and reports the rest
+    as what it is.
+
+    Returns None until there is enough history to be worth trusting.
+    """
+    obs, ref = store.get("observations", {}), store.get("reference", {})
+    ratios = [obs[d]["wind"] / ref[d]["wind"]
+              for d in obs
+              if d in ref and obs[d].get("wind") and ref[d].get("wind")]
+    if len(ratios) < 60:
+        return {"status": "collecting", "days": len(ratios), "days_needed": 60,
+                "note": "%d of 60 days — not yet enough to recommend anything."
+                        % len(ratios)}
+
+    measured = _median(ratios)
+    total = 1.0 / measured if measured else None
+
+    out = {"status": "ready", "days": len(ratios),
+           "measured_ratio": round(measured, 3),
+           "total_factor": round(total, 2)}
+
+    if not MAST_HEIGHT or MAST_HEIGHT >= 10:
+        out["recommended"] = None
+        out["note"] = ("This station reads %.0f%% of the 10m reference. How much of "
+                       "that is mast height rather than shelter cannot be worked out "
+                       "without MAST_HEIGHT in config.py, so no correction is "
+                       "recommended." % (measured * 100))
+        return out
+
+    z0 = float(ROUGHNESS) or 0.30
+    height_ratio = math.log(MAST_HEIGHT / z0) / math.log(10.0 / z0)
+    height_factor = 1.0 / height_ratio
+    shelter_factor = total / height_factor if height_factor else None
+
+    out.update({
+        "mast_height_m": MAST_HEIGHT,
+        "roughness_m": z0,
+        "height_factor": round(height_factor, 2),
+        "shelter_factor": round(shelter_factor, 2) if shelter_factor else None,
+        "recommended": round(height_factor, 2),
+    })
+    pct_height = (height_factor - 1) / (total - 1) * 100 if total > 1.001 else 100.0
+    out["note"] = (
+        "Reads %.0f%% of the 10m reference, so a factor of %.2f would match it "
+        "exactly. Of that, %.2f is mast height (%.0f%% of the shortfall) and %.2f "
+        "is local shelter. Recommended: %.2f — correct the height, leave the "
+        "shelter alone, since that is real wind at your site."
+        % (measured * 100, total, height_factor, max(0, min(100, pct_height)),
+           shelter_factor or 1.0, height_factor))
+    return out
+
+
 def score(store, since=None, model=PRIMARY, factors=(None, None)):
     """Compare one model's forecasts against the observation for each target.
 
@@ -708,6 +783,9 @@ def main():
                 % (1/f_spd if f_spd else 0, a, WIND_SCALE, bq,
                    "the measured factor" if a <= bq else "your fixed scale"))
 
+    advice = wind_scale_advice(store)
+    log("wind scale advice: " + advice.get("note", ""))
+
     air = anemometer(store)
     log(f"anemometer: {air['verdict']} — {air['note']}")
 
@@ -716,6 +794,7 @@ def main():
         "anemometer": air,
         "wind_scale_tested": (None if not WIND_SCALE else
                               {"wind": WIND_SCALE, "gust": GUST_SCALE}),
+        "wind_scale_advice": advice,
         "site_wind_factor": (None if f_spd is None else
                              {"speed": round(f_spd, 3), "gust": round(f_gst, 3),
                               "note": "station wind divided by this before scoring, "
