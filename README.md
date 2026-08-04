@@ -1,20 +1,32 @@
 # Fenland
 
-A weather skin for [weeWX](https://weewx.com) — live dashboard, multi-model
-ensemble, 16-day forecast and climatology back to 1940.
+Forecast, ensemble and climate panels for [weeWX](https://weewx.com), with a
+live dashboard — built to sit alongside the
+[Belchertown skin](https://github.com/poblabs/weewx-belchertown), not to
+replace it.
 
 **[Live demo](https://digitalurban.github.io/fenland/)** ·
 [Install](#install) · [Configuration](#configuration) · [weeWX notes](weewx/README.md)
 
 <a href="docs/img/dashboard.jpg"><img src="docs/img/dashboard.jpg" width="900" alt="Fenland dashboard"></a>
 
-Fenland is a front end, not a data logger. weeWX does the hard work of talking
-to your station; this shows it, and adds the forecast side that weeWX skins
-usually leave out — where the models disagree, how confident to be, and how
-unusual today is against the long record.
+Belchertown already does the hard part, and does it well: driving weeWX and
+publishing the history and statistics. Fenland reads that output for its
+History and Stats tabs rather than reinventing it, and spends its effort on the
+side weeWX skins usually leave out — where the models disagree, how confident
+to be, how unusual today is against the long record, and how your own station's
+forecasts have actually scored.
 
-It works without a weather station too. Point it at any coordinates and the
-forecast, ensemble and climate tabs work on their own.
+It degrades cleanly, so you can start anywhere:
+
+| You have | You get |
+|---|---|
+| Just coordinates | Forecast, ensemble, climate and radar |
+| A station feed (MQTT or JSON) | …and the live dashboard |
+| Belchertown's chart JSON | …and history and stats |
+
+Nothing here is a data logger. weeWX talks to the hardware; Fenland only
+displays what comes out of it.
 
 ---
 
@@ -83,8 +95,15 @@ data, and solar radiation and UV if your station reports them.
 These two tabs read the chart JSON published by the
 [Belchertown skin](https://github.com/poblabs/weewx-belchertown) (`day.json`,
 `week.json`, `weewx.json` and so on). If you don't run Belchertown they stay
-empty and the other three tabs work exactly as normal — Fenland doesn't
-duplicate work that skin already does well.
+empty and the other tabs work exactly as normal — Fenland doesn't duplicate
+work that skin already does well.
+
+One practical note if you're installing Belchertown now: the original
+repository has had no commits since August 2024, and several actively
+maintained forks exist, of which
+[uajqq/weewx-belchertown-new](https://github.com/uajqq/weewx-belchertown-new)
+is the most current. Fenland works with either — it only reads the JSON, and
+the format is unchanged.
 
 Every series is colour-banded by value — temperature on a cold-to-hot scale,
 wind on Beaufort colours, AQI on the standard bands — and converted into your
@@ -542,7 +561,7 @@ hardware and keeping the archive.
 
 The History and Stats tabs read the JSON published by the
 [Belchertown skin](https://github.com/poblabs/weewx-belchertown) rather than
-reinventing it. Belchertown is the more established skin and worth your time
+reinventing it. Fenland is a companion to it, not a competitor — Belchertown is the more established skin and worth your time
 either way — the two coexist happily, and if you would rather keep your existing
 site and take only the Forecast, Ensemble and Climate panels, that is a
 documented path: see [weewx/README.md](weewx/README.md).
