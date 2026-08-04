@@ -103,6 +103,29 @@ HTML = '''<!DOCTYPE html>
 </html>
 '''.replace("{dashboard}", pane("dashboard")).replace("{overlay}", overlay)
 
+# ── cache-busting ────────────────────────────────────────────────────────
+# GitHub Pages serves CSS and JS with a long cache lifetime, and a query
+# string on the page URL does not reach the assets underneath it. Without
+# this, someone who updates Fenland keeps running the old code until they
+# happen to hard-refresh — and will report bugs that were already fixed.
+# Stamping the version on every LOCAL asset means a version bump invalidates
+# them automatically. External URLs are left alone: the CDNs are already
+# versioned in their paths, and Google Fonts rejects unknown parameters.
+VERSION = re.search(r'version:\s*"([^"]+)"',
+                    open(os.path.join(HERE, "src", "dashboard.js"), encoding="utf-8").read())
+if not VERSION:
+    die("could not read FENLAND.version from src/dashboard.js")
+VERSION = VERSION.group(1)
+
+def stamp(m):
+    attr, url = m.group(1), m.group(2)
+    if url.startswith(("http://", "https://", "//", "data:")):
+        return m.group(0)
+    joiner = "&" if "?" in url else "?"
+    return '%s="%s%sv=%s"' % (attr, url, joiner, VERSION)
+
+HTML = re.sub(r'\b(src|href)="([^"]+)"', stamp, HTML)
+
 out = os.path.join(HERE, "index.html")
 open(out, "w", encoding="utf-8").write(HTML)
 

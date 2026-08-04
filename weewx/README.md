@@ -54,6 +54,11 @@ Before `</body>`:
 <script src="/fenland/src/verify-panel.js"></script>   <!-- optional -->
 ```
 
+If you update Fenland later, add `?v=1.0.0` (or whatever version you are on)
+to each `src` above and bump it when you upgrade. Browsers cache these files
+hard, so without it your visitors keep running the old copy. The standalone
+`index.html` does this automatically via `build.py`; hand-written tags do not.
+
 `config.js` and `units.js` must come **first** — every panel formats its output
 through `U`, and they will fail with `U is not defined` otherwise. The rest can
 be in any order; each defines one global (`window.__ENSEMBLE__` and so on) and

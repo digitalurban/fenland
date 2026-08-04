@@ -185,6 +185,24 @@ matters if you change the markup, and it exists because editing `index.html`
 directly works right up until you forget, at which point the two copies drift
 and a change silently fails to reach the site.
 
+It also stamps `?v=<version>` onto every local script and stylesheet, taking
+the version from `FENLAND.version` in `src/dashboard.js`. That matters more
+than it sounds: GitHub Pages serves CSS and JS with a long cache lifetime, and
+a query string on the *page* URL does not reach the assets underneath it.
+Without the stamp, anyone who updates Fenland keeps running the old code until
+they happen to hard-refresh — and reports bugs that were already fixed.
+
+So shipping an update is:
+
+```bash
+# bump FENLAND.version in src/dashboard.js, then
+python3 build.py && git commit -am "v1.1.0" && git push
+```
+
+Browsers pick it up on the next load, no hard refresh needed. The one
+exception is `config.js`, which carries the same stamp — if you edit your own
+settings without bumping the version, hard-refresh once to see them.
+
 ---
 
 ## Configuration
