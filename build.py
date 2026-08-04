@@ -90,6 +90,11 @@ HTML = '''<!DOCTYPE html>
 (function () {
   try {
     var c = window.WXCONFIG || {}, t = String(c.theme || "auto").toLowerCase(), dark;
+    /* A visitor's own choice outranks both the config and the OS — someone
+       running a dark desktop may still want this page light. */
+    var saved = null;
+    try { saved = localStorage.getItem("fenland-theme"); } catch (e) {}
+    if (saved === "light" || saved === "dark") t = saved;
     if (t === "dark") dark = true;
     else if (t === "light") dark = false;
     else if (t === "sun" && c.lat != null && c.lon != null) {

@@ -40,7 +40,7 @@ window.WXCONFIG = {
     wind: "mph"
   },
 
-  /* Small "FENLAND v1.3.0" credit in the page footer, linking to the
+  /* Small "FENLAND v1.4.0" credit in the page footer, linking to the
      project. It is how people find the skin — but set false to remove it. */
   credit: true,
 
@@ -94,6 +94,12 @@ window.WXCONFIG = {
      The whole design is CSS variables, so a theme is just a second set of
      them — retheme in css/dashboard.css if you want your own.            */
   // theme: "auto",
+
+  /* Visitors can override the theme with a button in the footer, and the
+     choice is remembered. It cycles AUTO -> LIGHT -> DARK -> AUTO, so
+     anyone who tries it can always hand control back. Set false to remove
+     the button — worth doing for a kiosk or wall display.               */
+  // themeToggle: true,
 
   /* ── air quality ────────────────────────────────────────────────────
      Where the PM2.5 and AQI tiles and the air-quality chart come from.

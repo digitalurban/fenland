@@ -262,6 +262,7 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `maxRainRate` | no | Ignore impossible gauge spikes above this mm/hr. Default 500, `null` disables |
 | `windy` | no | Adds a Windy radar tab. Omit the block and the tab is hidden |
 | `theme` | no | `auto` (OS), `sun`, `light` or `dark`. Default `auto` |
+| `themeToggle` | no | Footer button letting visitors override the theme. Default `true` |
 | `airQuality` | no | `auto` uses your sensor if configured, else Open-Meteo. `false` disables |
 
 Everything is computed internally in metric and converted only for display, so
@@ -288,6 +289,14 @@ arrives too late and you get a white flash on every load.
 The gauges, compass and barograph are SVG drawn with those same variables, so
 they follow without special handling. Highcharts caches its theme, so it is
 re-applied and the visible chart redrawn when the mode changes.
+
+Whatever you configure, a visitor can override it with the footer button —
+plenty of people run a dark desktop and still want a weather page light. It
+cycles **AUTO → LIGHT → DARK → AUTO** rather than toggling between two, so
+anyone who tries it can hand control back to the system; a plain toggle would
+strand them. The choice is remembered per browser, and outranks both the OS
+and `theme` in `config.js`. `themeToggle: false` removes the button, which is
+worth doing on a kiosk or wall display.
 
 ---
 
@@ -440,7 +449,7 @@ Open-Meteo's paid tier.
 
 ## Status and roadmap
 
-Version 1.3.0. Running in production at
+Version 1.4.0. Running in production at
 [digitalurban.github.io/fenland](https://digitalurban.github.io/fenland/), which
 is also the demo — so if the demo is broken, so is the author's weather station.
 

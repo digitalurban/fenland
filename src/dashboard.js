@@ -23,7 +23,7 @@
   /* Bump on release. Shown in the footer credit and worth quoting in any
      bug report — "which version are you on" is the first question. */
   const FENLAND = {
-    version: "1.3.0",
+    version: "1.4.0",
     url: "https://github.com/digitalurban/fenland"
   };
 
@@ -345,7 +345,31 @@
     const THEME_MODE = String(CFG.theme || "auto").toLowerCase();
     const darkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 
+    const THEME_KEY = "fenland-theme";
+    const THEME_TOGGLE_ON = CFG.themeToggle !== false;
+
+    /* null means "follow the site's configured behaviour" — which may itself
+       be auto, sun, light or dark. Storing only an explicit light/dark keeps
+       the visitor able to hand control back. */
+    /* Private browsing throws on localStorage. Falling back to a variable
+       keeps the button working for the session — without it the control
+       looks broken rather than merely forgetful. */
+    let themeMemory = null;
+    function themeOverride() {
+      try { const v = localStorage.getItem(THEME_KEY);
+            if (v === "light" || v === "dark") return v;
+            return themeMemory; }
+      catch (e) { return themeMemory; }
+    }
+    function setThemeOverride(v) {
+      themeMemory = v;
+      try { v ? localStorage.setItem(THEME_KEY, v) : localStorage.removeItem(THEME_KEY); }
+      catch (e) { /* choice holds for this session, just will not persist */ }
+    }
+
     function wantsDark() {
+      const o = themeOverride();
+      if (o) return o === "dark";
       if (THEME_MODE === "dark") return true;
       if (THEME_MODE === "light") return false;
       if (THEME_MODE === "sun" && CFG.lat != null && CFG.lon != null) {
@@ -377,6 +401,30 @@
          reflow on the next render tick without being touched here. */
     }
 
+    /* Three states rather than two: a plain toggle would strand anyone who
+       tried it, with no way back to following their system. */
+    function paintThemeToggle() {
+      const o = themeOverride();
+      const label = o === "light" ? "☀ LIGHT" : o === "dark" ? "☾ DARK" : "◐ AUTO";
+      const hint = o ? "Theme: " + o + " (click to cycle)"
+                     : "Theme: following " + (THEME_MODE === "sun" ? "sunset" : "your system")
+                       + " (click to override)";
+      ["themeToggle", "themeToggle_mob"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (!THEME_TOGGLE_ON) { el.style.display = "none"; return; }
+        el.textContent = label;
+        el.title = hint;
+      });
+    }
+
+    function cycleTheme() {
+      const o = themeOverride();
+      setThemeOverride(o === null ? "light" : o === "light" ? "dark" : null);
+      applyTheme();
+      paintThemeToggle();
+    }
+
     function watchTheme() {
       if (THEME_MODE === "auto" && darkQuery) {
         const on = () => applyTheme();
@@ -387,6 +435,7 @@
          flips a few minutes late at dusk is not worth a tighter loop. */
       if (THEME_MODE === "sun") setInterval(applyTheme, 5 * 60 * 1000);
       applyTheme();
+      paintThemeToggle();
     }
 
     function themeHighcharts() {
@@ -733,6 +782,8 @@
         const el = document.getElementById(id);
         if (el && !el.dataset.wired) { el.dataset.wired = '1'; el.addEventListener('click', handler); }
       };
+      wireOnce('themeToggle', cycleTheme);
+      wireOnce('themeToggle_mob', cycleTheme);
       wireOnce('detailsTrigger', openDetailOverlay);
       wireOnce('detailsTrigger_mob', openDetailOverlay);
       wireOnce('detailCloseBtn', closeDetailOverlay);
@@ -1178,7 +1229,7 @@
       const mobileWrap = document.getElementById('mobileLayout');
       if (window.innerWidth < 1024 && mobileWrap) {
         if(!document.getElementById('speedSvg_mob')) {
-          mobileWrap.innerHTML = `<header class="head"><div class="brand"><div class="name">${CFG.place || "Weather Station"}</div><div class="coords">${stationSubtitle()}</div></div><div class="clock"><div class="time" id="clockTime_mob">—:—</div><div class="dateline" id="clockDate_mob">——</div></div></header><section class="hero"><div class="hero-top"><div class="hero-glyph" id="heroGlyph_mob"></div><div class="hero-temp"><span id="airTemp_mob">--</span><span class="deg wx-unit-temp">°C</span></div></div><div class="hero-cond" id="condition_mob">Connecting...</div><div class="hero-extremes"><span class="hi-t">MAX <span id="tempMax_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="lo-t">MIN <span id="tempMin_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="trend-inline"><span id="tempTrendArrow_mob">→</span> <span id="tempTrendState_mob">STEADY</span> <span id="tempTrendRate_mob">—</span></span></div><div class="hero-sub"><div class="cell"><div class="lbl">Feels like</div><div class="val"><span id="feelsLike_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Dew point</div><div class="val"><span id="dewPoint_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Humidex</div><div class="val"><span id="humidex_mob">--</span><span class="u wx-unit-temp">°C</span></div></div></div></section><section class="baro"><div class="baro-head"><div class="eyebrow">Barometric pressure</div><div class="baro-read"><span id="baroNow_mob">----</span><span class="unit"><span class="wx-unit-pres">mb</span> · sea level</span><span class="trend-inline baro-trend-inline"><span id="tendArrow_mob">→</span> <span id="tendState_mob">STEADY</span> <span id="tendRate_mob">—</span></span></div></div><div class="baro-chart"><svg id="baroSvg_mob" viewBox="0 0 960 360" preserveAspectRatio="none"></svg></div><div class="nowcast"><div class="nc-lbl">Tendency forecast · next 6–12 h</div><div class="nc-txt" id="nowcastText_mob">—</div></div></section><section class="wind"><div class="wind-dials" id="windDials_mob"><div class="compass"><svg id="speedSvg_mob" viewBox="0 0 480 480"></svg></div><div class="compass"><svg id="compassSvg_mob" viewBox="0 0 480 480"></svg></div></div><div class="wind-readout-row"><div class="wind-data-cell"><div class="lbl">Wind speed</div><div class="val"><span id="windSpeed_mob">--</span><span class="u wx-unit-wind"> mph</span></div><div class="sub-txt" id="beaufort_mob">—</div></div><div class="wind-data-cell dir-cell"><div class="lbl">Direction</div><div class="val"><span id="windDir_text_mob">--</span></div></div><div class="wind-data-cell"><div class="lbl">Gust profile</div><div class="val"><span id="windGust_mob">--</span><span class="u wx-unit-wind"> mph</span></div></div></div></section><section class="tiles" id="tiles_mob"></section><footer class="foot"><span>SOURCE — MQTT weather feed</span><span id="footSun_mob">SUNRISE —:— · SUNSET —:—</span><span id="footStatus_mob">CONNECTING…</span><span id="footRefresh_mob">—</span><span class="foot-action" id="detailsTrigger_mob">HISTORY &amp; FORECAST ▸</span><span class="foot-credit" id="footCredit_mob"></span></footer>`; 
+          mobileWrap.innerHTML = `<header class="head"><div class="brand"><div class="name">${CFG.place || "Weather Station"}</div><div class="coords">${stationSubtitle()}</div></div><div class="clock"><div class="time" id="clockTime_mob">—:—</div><div class="dateline" id="clockDate_mob">——</div></div></header><section class="hero"><div class="hero-top"><div class="hero-glyph" id="heroGlyph_mob"></div><div class="hero-temp"><span id="airTemp_mob">--</span><span class="deg wx-unit-temp">°C</span></div></div><div class="hero-cond" id="condition_mob">Connecting...</div><div class="hero-extremes"><span class="hi-t">MAX <span id="tempMax_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="lo-t">MIN <span id="tempMin_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="trend-inline"><span id="tempTrendArrow_mob">→</span> <span id="tempTrendState_mob">STEADY</span> <span id="tempTrendRate_mob">—</span></span></div><div class="hero-sub"><div class="cell"><div class="lbl">Feels like</div><div class="val"><span id="feelsLike_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Dew point</div><div class="val"><span id="dewPoint_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Humidex</div><div class="val"><span id="humidex_mob">--</span><span class="u wx-unit-temp">°C</span></div></div></div></section><section class="baro"><div class="baro-head"><div class="eyebrow">Barometric pressure</div><div class="baro-read"><span id="baroNow_mob">----</span><span class="unit"><span class="wx-unit-pres">mb</span> · sea level</span><span class="trend-inline baro-trend-inline"><span id="tendArrow_mob">→</span> <span id="tendState_mob">STEADY</span> <span id="tendRate_mob">—</span></span></div></div><div class="baro-chart"><svg id="baroSvg_mob" viewBox="0 0 960 360" preserveAspectRatio="none"></svg></div><div class="nowcast"><div class="nc-lbl">Tendency forecast · next 6–12 h</div><div class="nc-txt" id="nowcastText_mob">—</div></div></section><section class="wind"><div class="wind-dials" id="windDials_mob"><div class="compass"><svg id="speedSvg_mob" viewBox="0 0 480 480"></svg></div><div class="compass"><svg id="compassSvg_mob" viewBox="0 0 480 480"></svg></div></div><div class="wind-readout-row"><div class="wind-data-cell"><div class="lbl">Wind speed</div><div class="val"><span id="windSpeed_mob">--</span><span class="u wx-unit-wind"> mph</span></div><div class="sub-txt" id="beaufort_mob">—</div></div><div class="wind-data-cell dir-cell"><div class="lbl">Direction</div><div class="val"><span id="windDir_text_mob">--</span></div></div><div class="wind-data-cell"><div class="lbl">Gust profile</div><div class="val"><span id="windGust_mob">--</span><span class="u wx-unit-wind"> mph</span></div></div></div></section><section class="tiles" id="tiles_mob"></section><footer class="foot"><span>SOURCE — MQTT weather feed</span><span id="footSun_mob">SUNRISE —:— · SUNSET —:—</span><span id="footStatus_mob">CONNECTING…</span><span id="footRefresh_mob">—</span><span class="foot-action" id="themeToggle_mob" title="Theme">◐ AUTO</span><span class="foot-action" id="detailsTrigger_mob">HISTORY &amp; FORECAST ▸</span><span class="foot-credit" id="footCredit_mob"></span></footer>`; 
 
           const mobileVectors = buildDialVectors(true);
           const speedSvgMob = document.getElementById('speedSvg_mob');
@@ -1201,6 +1252,7 @@
         document.getElementById('tempMax_mob').textContent = dayMaxText;
         labelUnits();   // the mobile layout is rebuilt on resize
         applyNowcastSetting();
+        paintThemeToggle();
         renderCredit();
         document.getElementById('tempTrendArrow_mob').textContent = tempArrow;
         document.getElementById('tempTrendState_mob').textContent = tempState;
