@@ -186,6 +186,12 @@ python3 backfill_wind.py              # write, after taking a backup
 It never overwrites a value that is already there, so it is safe to re-run and
 safe to run against an existing history.
 
+The backfilled rows carry wind and gust only, and the forecast-verification
+figures ignore them deliberately: `days_collected` and the chart count days the
+nightly run actually recorded weather for, not days that exist solely to give
+the anemometer a baseline. Otherwise a station four days into verification
+would claim months of forecast history it does not have.
+
 Two things make the join valid, and the script checks both rather than assuming
 them. `year.json`'s `windSpeed` and `windGust` carry no `aggregate_type`, so
 they are daily *maxima* — the same statistic the nightly run takes from

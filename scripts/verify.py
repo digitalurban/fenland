@@ -456,11 +456,24 @@ def score(store, since=None, model=PRIMARY):
     return [dict(lead=k, **summarise(v)) for k, v in sorted(leads.items())]
 
 
+def scored_dates(store):
+    """Dates the forecast verification can actually speak about.
+
+    Not simply every observation: backfill_wind.py adds wind-only rows going
+    back months to seed the anemometer check, and counting those as
+    verification history would claim a record that does not exist. A day
+    counts here only if the nightly run recorded weather for it.
+    """
+    obs = store.get("observations", {})
+    return sorted(d for d, o in obs.items()
+                  if o.get("tmax") is not None or o.get("rain") is not None)
+
+
 def daily_series(store, days=45, model=PRIMARY):
     """Observed vs day-ahead forecast, for the chart."""
     obs = store["observations"]
     out = []
-    for target in sorted(obs)[-days:]:
+    for target in scored_dates(store)[-days:]:
         issue = (dt.date.fromisoformat(target) - dt.timedelta(days=1)).isoformat()
         entry = (store["forecasts"].get(issue) or {}).get(target)
         fc = _forecast_for(entry, model) or {}
@@ -607,7 +620,7 @@ def main():
 
     # 5. score and publish
     recent_from = (dt.date.today() - dt.timedelta(days=RECENT_DAYS)).isoformat()
-    all_dates = sorted(store["observations"])
+    all_dates = scored_dates(store)
     air = anemometer(store)
     log(f"anemometer: {air['verdict']} — {air['note']}")
 
