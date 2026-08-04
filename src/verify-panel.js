@@ -178,6 +178,7 @@ window.__VERIFY__ = (function () {
         "MEAN ABSOLUTE ERROR ON TOMORROW'S MAXIMUM, BEST FIRST</div>" +
       "<div class='stats-table-scroll'><table class='stats-table'><thead><tr>" +
         "<th>Model</th><th>Day-1 error</th><th>Day-1 bias</th><th>Day-3 error</th>" +
+        "<th>Wind error</th><th>Gust error</th>" +
         "<th>Rain found</th><th>False alarm</th><th>Days</th>" +
       "</tr></thead><tbody>" +
       rows.map((r, i) =>
@@ -187,10 +188,30 @@ window.__VERIFY__ = (function () {
         "<td>" + U.dt(r.tmax_mae) + "</td>" +
         "<td>" + sgn(r.tmax_bias) + "</td>" +
         "<td>" + (d3[r.model] != null ? U.dt(d3[r.model]) : "–") + "</td>" +
+        "<td>" + (r.wind_mae != null ? U.w(r.wind_mae, 1) : "–") + "</td>" +
+        "<td>" + (r.gust_mae != null ? U.w(r.gust_mae, 1) : "–") + "</td>" +
         "<td>" + (r.pod != null ? Math.round(r.pod*100) + "%" : "–") + "</td>" +
         "<td>" + (r.far != null ? Math.round(r.far*100) + "%" : "–") + "</td>" +
         "<td>" + r.n + "</td></tr>").join("") +
-      "</tbody></table></div>";
+      "</tbody></table></div>" + siteFactorNote(j);
+  }
+
+  /* Wind is scored against a 10m equivalent, not against the raw reading.
+     Say so on the panel — an unexplained adjustment is worse than none. */
+  function siteFactorNote(j) {
+    const f = j.site_wind_factor;
+    if (!f || !f.speed) {
+      return (j.league_d1 || []).some(r => r.wind_mae != null) ? "" :
+        "<div class='cl-note' style='margin-top:6px'>WIND AND GUST ARE NOT SCORED YET \u2014 " +
+        "THAT NEEDS ABOUT A MONTH OF WIND HISTORY ALONGSIDE THE MODEL.</div>";
+    }
+    const pct = Math.round(f.speed * 100);
+    return "<div class='cl-note' style='margin-top:6px'>" +
+      "WIND AND GUST ERRORS ARE MEASURED AGAINST A 10&thinsp;M EQUIVALENT. THIS STATION READS " +
+      pct + "% OF THE OPEN-TERRAIN REFERENCE \u2014 NORMAL FOR A LOWER MAST AMONG TREES OR " +
+      "BUILDINGS \u2014 SO READINGS ARE DIVIDED BY " + f.speed.toFixed(2) +
+      " BEFORE COMPARING, OR EVERY MODEL WOULD SHOW THE SAME LARGE NEGATIVE BIAS THAT " +
+      "MEASURES THE MAST RATHER THAN THE FORECAST.</div>";
   }
 
   function narrative(j, recent) {

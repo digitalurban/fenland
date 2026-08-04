@@ -204,3 +204,28 @@ the backfill and the nightly run. That matters more than it sounds: if the two
 used different sources, the join between backfilled and live rows would appear
 as a step change in the ratio — which is exactly the shape this check hunts
 for, so a methodology artefact would read as a failing bearing.
+
+
+## Wind and gust scoring
+
+The league table scores wind and gust alongside temperature and rain, but not
+against the raw station reading.
+
+A lower mast among trees or buildings sees a fixed fraction of the 10 m
+open-terrain wind — the log profile puts a 3–4 m mast in village terrain at
+roughly 0.7. That is siting, not error. Compared raw against a 10 m model,
+every model would show the same large negative bias, and the table would be
+ranking models on how well they match a systematically low reading rather than
+on skill.
+
+So the station's wind is divided by its site factor first, turning it into a
+10 m equivalent. The factor is the median of station-over-reference across all
+paired days, and the panel states it plainly beneath the table — an
+unexplained adjustment is worse than none.
+
+Wind is left unscored entirely until there are at least 30 paired days. Scoring
+it on a handful would be worse than saying nothing.
+
+The factor is deliberately taken over a long window. A short one would track
+weather rather than exposure, and would also quietly absorb a genuinely failing
+bearing — which is what the anemometer check watches for separately.

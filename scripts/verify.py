@@ -212,7 +212,8 @@ def fetch_forecast():
     params = {
         "latitude": f"{LAT:.4f}", "longitude": f"{LON:.4f}",
         "daily": "temperature_2m_max,temperature_2m_min,precipitation_sum,"
-                 "precipitation_probability_max,wind_speed_10m_max",
+                 "precipitation_probability_max,wind_speed_10m_max,"
+                 "wind_gusts_10m_max",
         "models": ",".join(MODELS),
         "timezone": TZ, "wind_speed_unit": "mph", "forecast_days": 16,
     }
@@ -226,6 +227,7 @@ def fetch_forecast():
         "rain": _by_model(d, "precipitation_sum"),
         "pop":  _by_model(d, "precipitation_probability_max"),
         "wind": _by_model(d, "wind_speed_10m_max"),
+        "gust": _by_model(d, "wind_gusts_10m_max"),
     }
 
     out = {}
@@ -386,13 +388,47 @@ def _forecast_for(entry, model):
     return entry.get(model)
 
 
-def score(store, since=None, model=PRIMARY):
+def site_wind_factor(store):
+    """How much of the 10m open-terrain wind this station actually sees.
+
+    A lower mast among hedges or buildings reads a fixed fraction of the
+    reference — the log wind profile puts a 3-4m mast in village terrain at
+    roughly 0.7. That is siting, not error, but it makes a raw comparison
+    against a 10m model useless: every model would show the same large
+    negative bias, which measures the mast rather than the forecast.
+
+    So divide the observation by this before scoring, turning it into a 10m
+    equivalent. Returns (speed_factor, gust_factor), or (None, None) when
+    there is not enough history to be confident — in which case wind is left
+    unscored rather than scored wrongly.
+
+    Deliberately taken over a long window. A short one would track weather
+    rather than exposure, and would also absorb a genuinely failing bearing,
+    which is what the anemometer check is separately watching for.
+    """
+    obs, ref = store.get("observations", {}), store.get("reference", {})
+    spd, gst = [], []
+    for date, o in obs.items():
+        r = ref.get(date)
+        if not r:
+            continue
+        if o.get("wind") and r.get("wind"):
+            spd.append(o["wind"] / r["wind"])
+        if o.get("gust") and r.get("gust"):
+            gst.append(o["gust"] / r["gust"])
+    if len(spd) < 30:
+        return None, None
+    return _median(spd), (_median(gst) if len(gst) >= 30 else _median(spd))
+
+
+def score(store, since=None, model=PRIMARY, factors=(None, None)):
     """Compare one model's forecasts against the observation for each target.
 
     Bias is forecast minus observed, so a negative temperature bias means the
     forecast runs cold. MAE ignores sign and shows typical size of error.
     """
     obs = store["observations"]
+    f_spd, f_gst = factors
     leads = {}
 
     for issue, targets in store["forecasts"].items():
@@ -412,12 +448,19 @@ def score(store, since=None, model=PRIMARY):
             o = obs[target]
             b = leads.setdefault(lead, {
                 "n": 0, "tmax_e": [], "tmin_e": [], "rain_e": [],
+                "wind_e": [], "gust_e": [],
                 "hit": 0, "miss": 0, "false_alarm": 0, "correct_dry": 0,
             })
             counted = False
             for key, bucket in (("tmax", "tmax_e"), ("tmin", "tmin_e"), ("rain", "rain_e")):
                 if o.get(key) is not None and fc.get(key) is not None:
                     b[bucket].append(fc[key] - o[key])
+                    counted = True
+
+            # wind and gust, with the observation lifted to a 10m equivalent
+            for key, bucket, factor in (("wind", "wind_e", f_spd), ("gust", "gust_e", f_gst)):
+                if factor and o.get(key) is not None and fc.get(key) is not None:
+                    b[bucket].append(fc[key] - (o[key] / factor))
                     counted = True
             if o.get("rain") is not None and fc.get("rain") is not None:
                 f_wet, o_wet = fc["rain"] >= WET, o["rain"] >= WET
@@ -447,6 +490,8 @@ def score(store, since=None, model=PRIMARY):
             "tmax": stats(b["tmax_e"]),
             "tmin": stats(b["tmin_e"]),
             "rain": stats(b["rain_e"]),
+            "wind": stats(b["wind_e"]),
+            "gust": stats(b["gust_e"]),
             # probability of detection and false alarm ratio, the standard pair
             "pod": round(hits / (hits + misses), 2) if (hits + misses) else None,
             "far": round(fa / (hits + fa), 2) if (hits + fa) else None,
@@ -487,12 +532,12 @@ def daily_series(store, days=45, model=PRIMARY):
     return out
 
 
-def league(store, since=None, lead=1):
+def league(store, since=None, lead=1, factors=(None, None)):
     """One row per model at a given lead time, best first — the answer to
     'which forecast should I actually trust for this field?'"""
     rows = []
     for m in MODELS:
-        for L in score(store, since=since, model=m):
+        for L in score(store, since=since, model=m, factors=factors):
             if L["lead"] != lead:
                 continue
             rows.append({
@@ -501,6 +546,10 @@ def league(store, since=None, lead=1):
                 "tmax_bias": (L["tmax"] or {}).get("bias"),
                 "tmin_mae": (L["tmin"] or {}).get("mae"),
                 "rain_mae": (L["rain"] or {}).get("mae"),
+                "wind_mae": (L["wind"] or {}).get("mae"),
+                "wind_bias": (L["wind"] or {}).get("bias"),
+                "gust_mae": (L["gust"] or {}).get("mae"),
+                "gust_bias": (L["gust"] or {}).get("bias"),
                 "pod": L["pod"], "far": L["far"],
             })
     rows.sort(key=lambda r: (r["tmax_mae"] is None, r["tmax_mae"]))
@@ -621,12 +670,26 @@ def main():
     # 5. score and publish
     recent_from = (dt.date.today() - dt.timedelta(days=RECENT_DAYS)).isoformat()
     all_dates = scored_dates(store)
+    f_spd, f_gst = site_wind_factor(store)
+    factors = (f_spd, f_gst)
+    if f_spd:
+        log("site wind factor: speed %.2f, gust %.2f — station readings are "
+            "divided by this before scoring, so models are compared against a "
+            "10m equivalent rather than against the mast" % (f_spd, f_gst))
+    else:
+        log("site wind factor: not enough paired wind history yet — "
+            "wind and gust left unscored")
+
     air = anemometer(store)
     log(f"anemometer: {air['verdict']} — {air['note']}")
 
     payload = {
         "generated": int(time.time() * 1000),
         "anemometer": air,
+        "site_wind_factor": (None if f_spd is None else
+                             {"speed": round(f_spd, 3), "gust": round(f_gst, 3),
+                              "note": "station wind divided by this before scoring, "
+                                      "to compare against a 10m model"}),
         "days_collected": len(all_dates),
         "first_date": all_dates[0] if all_dates else None,
         "last_date": all_dates[-1] if all_dates else None,
@@ -634,15 +697,15 @@ def main():
         "wet_threshold_mm": WET,
         "models": MODELS,
         "primary": PRIMARY,
-        "all_time": score(store),
-        "recent": score(store, since=recent_from),
+        "all_time": score(store, factors=factors),
+        "recent": score(store, since=recent_from, factors=factors),
         "series": daily_series(store),
         # per-model scores, so the page can rank them against each other
-        "by_model": {m: {"all_time": score(store, model=m),
-                         "recent": score(store, since=recent_from, model=m)}
+        "by_model": {m: {"all_time": score(store, model=m, factors=factors),
+                         "recent": score(store, since=recent_from, model=m, factors=factors)}
                      for m in MODELS},
-        "league_d1": league(store, since=recent_from, lead=1),
-        "league_d3": league(store, since=recent_from, lead=3),
+        "league_d1": league(store, since=recent_from, lead=1, factors=factors),
+        "league_d3": league(store, since=recent_from, lead=3, factors=factors),
     }
     best = payload["league_d1"][0]["model"] if payload["league_d1"] else None
     log(f"scored {payload['days_collected']} days; "
