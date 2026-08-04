@@ -206,12 +206,22 @@ window.__VERIFY__ = (function () {
         "THAT NEEDS ABOUT A MONTH OF WIND HISTORY ALONGSIDE THE MODEL.</div>";
     }
     const pct = Math.round(f.speed * 100);
+    /* Gusts were added to the forecast fetch after wind, so there is a spell
+       where wind scores and gust does not. A column of dashes with no reason
+       given reads as a fault. */
+    const rows = j.league_d1 || [];
+    const gustPending = rows.some(r => r.wind_mae != null) &&
+                        rows.every(r => r.gust_mae == null);
+    const pending = gustPending
+      ? " GUST IS NOT SCORED YET \u2014 IT NEEDS A FORECAST ISSUED AFTER GUSTS WERE ADDED, " +
+        "AND THE DAY IT COVERS TO HAVE HAPPENED. IT WILL APPEAR AFTER THE NEXT NIGHTLY RUN."
+      : "";
     return "<div class='cl-note' style='margin-top:6px'>" +
       "WIND AND GUST ERRORS ARE MEASURED AGAINST A 10&thinsp;M EQUIVALENT. THIS STATION READS " +
       pct + "% OF THE OPEN-TERRAIN REFERENCE \u2014 NORMAL FOR A LOWER MAST AMONG TREES OR " +
       "BUILDINGS \u2014 SO READINGS ARE DIVIDED BY " + f.speed.toFixed(2) +
       " BEFORE COMPARING, OR EVERY MODEL WOULD SHOW THE SAME LARGE NEGATIVE BIAS THAT " +
-      "MEASURES THE MAST RATHER THAN THE FORECAST.</div>";
+      "MEASURES THE MAST RATHER THAN THE FORECAST." + pending + "</div>";
   }
 
   function narrative(j, recent) {
