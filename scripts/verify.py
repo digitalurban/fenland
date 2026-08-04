@@ -436,6 +436,57 @@ def site_wind_factor(store):
     return _median(spd), (_median(gst) if len(gst) >= 30 else _median(spd))
 
 
+def wind_calibration(store, window_days=90):
+    """The factor measured from this station's own data, updated every night.
+
+    Different from the recommendation in wind_scale_advice(), and the
+    difference matters. That one is theory: mast height and roughness put
+    through the log wind profile, so it never moves. This one is measurement:
+    what the station actually reads against the reanalysis, over a rolling
+    window, so it moves as conditions change.
+
+    It also corrects more. The measured factor absorbs shelter as well as
+    height, so applying it in full will make the numbers agree with a model
+    even where the wind genuinely is lighter. Use it to watch, and to sanity
+    check the recommendation — not automatically as the correction.
+
+    The monthly breakdown is the interesting part. Deciduous shelter changes
+    through the year: bare branches in winter block far less than a canopy in
+    July, so a well-sheltered site will show a noticeably higher factor in
+    winter. A single number cannot express that, and the spread says how badly
+    a single number fits.
+    """
+    obs, ref = store.get("observations", {}), store.get("reference", {})
+    pairs = sorted((d, obs[d]["wind"] / ref[d]["wind"])
+                   for d in obs
+                   if d in ref and obs[d].get("wind") and ref[d].get("wind"))
+    if len(pairs) < 30:
+        return {"status": "collecting", "days": len(pairs), "days_needed": 30}
+
+    cut = (dt.date.today() - dt.timedelta(days=window_days)).isoformat()
+    recent = [x for d, x in pairs if d >= cut]
+    windowed = len(recent) >= 20
+    cur = _median(recent if windowed else [x for _, x in pairs])
+
+    months = {}
+    for d, x in pairs:
+        months.setdefault(d[:7], []).append(x)
+    monthly = [{"month": m, "ratio": round(_median(v), 3),
+                "factor": round(1.0 / _median(v), 2), "n": len(v)}
+               for m, v in sorted(months.items()) if len(v) >= 10]
+    factors = [m["factor"] for m in monthly]
+
+    return {
+        "status": "ready",
+        "days": len(pairs),
+        "window_days": window_days if windowed else None,
+        "calibrated_ratio": round(cur, 3),
+        "calibrated_factor": round(1.0 / cur, 2),
+        "monthly": monthly,
+        "spread": round(max(factors) - min(factors), 2) if len(factors) > 1 else 0.0,
+    }
+
+
 def wind_scale_advice(store):
     """Work out what wind correction, if any, this station should apply.
 
@@ -786,6 +837,14 @@ def main():
     advice = wind_scale_advice(store)
     log("wind scale advice: " + advice.get("note", ""))
 
+    calib = wind_calibration(store)
+    if calib.get("status") == "ready":
+        log("measured calibration: x%.2f over the last %s (%d days of history, "
+            "monthly spread %.2f)"
+            % (calib["calibrated_factor"],
+               ("%d days" % calib["window_days"]) if calib["window_days"] else "whole record",
+               calib["days"], calib["spread"]))
+
     air = anemometer(store)
     log(f"anemometer: {air['verdict']} — {air['note']}")
 
@@ -795,6 +854,7 @@ def main():
         "wind_scale_tested": (None if not WIND_SCALE else
                               {"wind": WIND_SCALE, "gust": GUST_SCALE}),
         "wind_scale_advice": advice,
+        "wind_calibration": calib,
         "site_wind_factor": (None if f_spd is None else
                              {"speed": round(f_spd, 3), "gust": round(f_gst, 3),
                               "note": "station wind divided by this before scoring, "

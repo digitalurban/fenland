@@ -194,7 +194,7 @@ window.__VERIFY__ = (function () {
         "<td>" + (r.pod != null ? Math.round(r.pod*100) + "%" : "–") + "</td>" +
         "<td>" + (r.far != null ? Math.round(r.far*100) + "%" : "–") + "</td>" +
         "<td>" + r.n + "</td></tr>").join("") +
-      "</tbody></table></div>" + siteFactorNote(j) + windScaleAdvice(j);
+      "</tbody></table></div>" + siteFactorNote(j) + windScaleAdvice(j) + windCalibration(j);
   }
 
   /* Wind is scored against a 10m equivalent, not against the raw reading.
@@ -227,6 +227,47 @@ window.__VERIFY__ = (function () {
       "BUILDINGS \u2014 SO READINGS ARE DIVIDED BY " + f.speed.toFixed(2) +
       " BEFORE COMPARING, OR EVERY MODEL WOULD SHOW THE SAME LARGE NEGATIVE BIAS THAT " +
       "MEASURES THE MAST RATHER THAN THE FORECAST." + scaleNote + pending + "</div>";
+  }
+
+  /* The measured factor, which moves — as against the recommendation, which
+     doesn't. Worth showing both: if they diverge, the gap is shelter, and if
+     the monthly figures swing about, no single number fits the site. */
+  function windCalibration(j) {
+    const c = j.wind_calibration;
+    if (!c) return "";
+    if (c.status === "collecting") {
+      return "<div class='cl-note' style='margin-top:6px'>MEASURED CALIBRATION: " +
+             c.days + " OF " + c.days_needed + " DAYS.</div>";
+    }
+    const months = (c.monthly || []);
+    const bars = months.map(m => {
+      const f = Number(m.factor);
+      return "<td style='text-align:center'>" + m.month.slice(5) +
+             "<br><b>&times;" + f.toFixed(2) + "</b></td>";
+    }).join("");
+
+    const drift = c.spread >= 0.15
+      ? " IT VARIES BY " + Number(c.spread).toFixed(2) + " ACROSS THE YEAR, WHICH IS A LOT " +
+        "— DECIDUOUS SHELTER CHANGES WITH THE SEASONS, SO NO SINGLE FIGURE FITS " +
+        "EVERY MONTH."
+      : " IT HAS HELD STEADY ACROSS THE YEAR, SO A SINGLE FIGURE FITS THIS SITE WELL.";
+
+    return "<div class='vf-hero' style='margin-top:12px;display:block'>" +
+      "<div class='fc-status' style='margin-bottom:4px'>MEASURED CALIBRATION &nbsp;" +
+      "<b style='font-size:1.15em'>&times;" + Number(c.calibrated_factor).toFixed(2) +
+      "</b></div>" +
+      "<div class='ens-analysis'>What this station would need to match the " +
+      "reanalysis exactly, from " + c.days + " days of its own readings" +
+      (c.window_days ? ", over the last " + c.window_days + " days" : "") +
+      ". This corrects shelter as well as height, so it is higher than the " +
+      "recommendation above — use it to watch the site, not as the " +
+      "correction to apply.</div>" +
+      (months.length > 1
+        ? "<div class='stats-table-scroll' style='margin-top:8px'><table class='stats-table'>" +
+          "<tbody><tr>" + bars + "</tr></tbody></table></div>"
+        : "") +
+      "<div class='cl-note' style='margin-top:6px'>" + drift.trim() + "</div>" +
+      "</div>";
   }
 
   /* What correction, if any, this station should apply — and why not more. */

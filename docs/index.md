@@ -480,7 +480,16 @@ amount. Standardising for it is ordinary meteorological practice.
 less wind at your site. Scaling that away doesn't standardise your data — it
 makes it agree with a model while disagreeing with reality.
 
-**Fenland separates them.** Tell it your mast height:
+**Fenland separates them.** There are three settings, in two files, and they do
+different jobs. Set them in this order:
+
+| # | Setting | File | What it does | When you see it |
+|---|---|---|---|---|
+| 1 | `MAST_HEIGHT`, `ROUGHNESS` | `scripts/config.py` (on the machine running verify.py) | Lets it work out how much of your shortfall is height and how much is shelter | Next nightly run, if you have 60 days of wind history |
+| 2 | `windScale` | `config.js` (on the website) | Actually corrects the wind shown on the dashboard | Immediately |
+| 3 | `WIND_SCALE` | `scripts/config.py` | Scores your chosen factor as an extra league-table column, so you can check it | Fills over 2–3 weeks |
+
+**Step 1 — ask what you need.**
 
 ```python
 # scripts/config.py
@@ -495,18 +504,38 @@ After 60 days of paired readings the verification panel reports something like:
 > Of that, 1.17 is mast height (36% of the shortfall) and 1.25 is local
 > shelter. Recommended: 1.17 — correct the height, leave the shelter alone.
 
-**Applying it.** In `config.js`, `windScale: 1.17` corrects the display only —
-your weeWX archive stays exactly what the instrument measured, so the
-correction can be changed or removed at any time, and the footer states the
-factor rather than passing an adjusted number off as raw. If you would rather
-correct at source, use the weeWX or Cumulus offset instead; just be aware that
-rewrites your archive permanently and puts a step in your own history.
+The recommendation comes from your mast height and roughness, so it does not
+change as data accumulates. What the data settles is the *split* — how much of
+your shortfall is height and how much is shelter — which is why it waits for 60
+days before saying anything.
 
-**Testing before committing.** Set `WIND_SCALE` in `scripts/config.py` to the
-figure you are considering and the league table scores it as its own column,
-beside the factor measured from your own data. Whichever column shows the
-lower error is the better fit — which turns the question into a measurement
-rather than an argument.
+**Step 2 — apply it.** In `config.js`:
+
+```js
+windScale: 1.17,
+```
+
+Display only. Your weeWX archive still holds what the instrument measured, so
+this can be changed or removed at any time, and the footer states the factor
+rather than passing an adjusted number off as raw. Prefer to correct at source?
+Use the weeWX or Cumulus offset instead — but that rewrites your archive
+permanently and puts a step in your own history.
+
+**Step 3 — check you chose well.** In `scripts/config.py`:
+
+```python
+WIND_SCALE = 1.17
+```
+
+The league table then carries two wind columns: one using the factor measured
+from your own data, one using the figure you picked. Whichever shows the lower
+error fits your site better, which turns the question into a measurement rather
+than an argument.
+
+This one is slow. It needs forecasts *and* the days they covered, so it starts
+at a handful of days and only means something after two or three weeks — the
+backfilled wind history cannot help, because those days have no forecasts to
+score against.
 
 ---
 
