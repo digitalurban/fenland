@@ -144,3 +144,28 @@ coarser one.
 
 The history file is pruned to two years and stays small — a few hundred KB
 after a year.
+
+
+## Anemometer health
+
+The nightly run also records the station's daily maximum wind and gust, and
+compares them with the model's for the same day. Over months a falling ratio
+is the signature of a bearing drying out — friction builds gradually while
+nothing about the site changes.
+
+The absolute ratio is not the signal. A sheltered or low-mounted anemometer
+genuinely reads well below an open-terrain 10 m model, and always will. Only
+the *trend* is diagnostic, which is why this needs a fortnight before it says
+anything and a couple of months before it says much.
+
+Output appears in `verification.json` under `anemometer`:
+
+```json
+{ "verdict": "steady", "days": 96, "speed_ratio_recent": 0.66,
+  "gust_to_mean_recent": 2.0, "note": "No meaningful drift against the model." }
+```
+
+A verdict of `check the bearing` means it is reading 25% or more below its own
+established baseline. Confirm mechanically before buying parts: spin the cups
+by hand — they should turn freely and coast several seconds to a smooth, silent
+stop. Grinding, roughness, or stopping almost at once is the bearing.

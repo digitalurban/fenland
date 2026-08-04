@@ -129,6 +129,26 @@ def to_c(value, units):
     return v
 
 
+def to_mph(value, units):
+    """weewx may report wind in km/h, m/s, knots or mph depending on how it
+    is configured. Normalise, because the whole point of this check is
+    comparing like with like over months."""
+    if value is None:
+        return None
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return None
+    u = str(units or "").strip().lower().replace(" ", "")
+    if u in ("km/h", "kmh", "kph"):
+        return v * 0.621371
+    if u in ("m/s", "ms", "mps"):
+        return v * 2.236936
+    if u in ("knot", "knots", "kt", "kts"):
+        return v * 1.150779
+    return v                      # already mph, or unlabelled
+
+
 def to_mm(value, units):
     if value is None:
         return None
@@ -166,6 +186,8 @@ def fetch_observed():
         "tmax": grab("max temperature", to_c),
         "tmin": grab("min temperature", to_c),
         "rain": grab("rain total", to_mm),
+        "wind": grab("max wind speed", to_mph),
+        "gust": grab("max wind gust", to_mph),
     }
 
 
@@ -218,6 +240,119 @@ def fetch_forecast():
                 per_model[m] = vals
         if per_model:
             out[date] = per_model
+    return out
+
+
+
+# ── anemometer health ─────────────────────
+def fetch_reference_wind(days=3):
+    """The model's own view of the last few days, used as a yardstick for the
+    station's anemometer. Not a forecast — past_days returns the analysis, so
+    it is the best available estimate of what the wind actually did."""
+    params = {
+        "latitude": f"{LAT:.4f}", "longitude": f"{LON:.4f}",
+        "daily": "wind_speed_10m_max,wind_gusts_10m_max",
+        "timezone": TZ, "wind_speed_unit": "mph",
+        "past_days": days, "forecast_days": 1,
+    }
+    r = requests.get(FORECAST_URL, params=params, timeout=45)
+    r.raise_for_status()
+    d = (r.json() or {}).get("daily") or {}
+    out = {}
+    for i, date in enumerate(d.get("time", [])):
+        spd = (d.get("wind_speed_10m_max") or [None])[i:i+1]
+        gus = (d.get("wind_gusts_10m_max") or [None])[i:i+1]
+        out[date] = {"wind": spd[0] if spd else None,
+                     "gust": gus[0] if gus else None}
+    return out
+
+
+def _median(xs):
+    xs = sorted(x for x in xs if x is not None)
+    if not xs:
+        return None
+    n = len(xs)
+    return xs[n // 2] if n % 2 else (xs[n // 2 - 1] + xs[n // 2]) / 2.0
+
+
+def anemometer(store):
+    """Watch the station's wind against the model's, and say whether the
+    relationship is drifting.
+
+    The absolute ratio means little on its own: a lower mast in a sheltered
+    village will always read well under an open-terrain 10m model, and that
+    is siting, not a fault. What matters is CHANGE. A bearing that is drying
+    out adds friction gradually, so the ratio falls over weeks to months
+    while nothing else about the site alters.
+
+    Gust ratio is tracked alongside because a stiffening rotor loses the
+    peaks before it loses the mean — but note it cannot catch uniform
+    under-reading, where mean and gust fall together and their ratio holds.
+    """
+    obs = store.get("observations", {})
+    ref = store.get("reference", {})
+    rows = []
+    for date in sorted(obs):
+        o, r = obs[date], ref.get(date)
+        if not r:
+            continue
+        if o.get("wind") and r.get("wind"):
+            rows.append({
+                "date": date,
+                "speed": o["wind"] / r["wind"] if r["wind"] else None,
+                "gust": (o["gust"] / r["gust"]) if o.get("gust") and r.get("gust") else None,
+                "ratio_g2m": (o["gust"] / o["wind"]) if o.get("gust") and o["wind"] else None,
+            })
+
+    today = dt.date.today()
+    def window(lo, hi):
+        a = (today - dt.timedelta(days=hi)).isoformat()
+        b = (today - dt.timedelta(days=lo)).isoformat()
+        return [x for x in rows if a <= x["date"] <= b]
+
+    recent = window(0, 30)
+    baseline = window(31, 120)
+
+    out = {
+        "days": len(rows),
+        "recent_days": len(recent),
+        "speed_ratio_recent": _median([x["speed"] for x in recent]),
+        "gust_ratio_recent": _median([x["gust"] for x in recent]),
+        "gust_to_mean_recent": _median([x["ratio_g2m"] for x in recent]),
+        "speed_ratio_baseline": _median([x["speed"] for x in baseline]),
+        "verdict": None,
+        "note": None,
+    }
+
+    if len(recent) < 14:
+        out["verdict"] = "collecting"
+        out["note"] = (f"{len(recent)} of 14 days needed before this means anything.")
+        return out
+
+    r_now, r_base = out["speed_ratio_recent"], out["speed_ratio_baseline"]
+    if r_base and r_now and len(baseline) >= 21:
+        drop = 1 - (r_now / r_base)
+        out["drop_vs_baseline"] = round(drop, 3)
+        if drop >= 0.25:
+            out["verdict"] = "check the bearing"
+            out["note"] = (f"Reads {drop*100:.0f}% lower against the model than it did "
+                           f"a month or more ago. Spin the cups by hand: they should "
+                           f"turn freely and coast several seconds to a silent stop.")
+        elif drop >= 0.12:
+            out["verdict"] = "watch"
+            out["note"] = f"Down {drop*100:.0f}% on its own baseline — not conclusive, worth watching."
+        else:
+            out["verdict"] = "steady"
+            out["note"] = "No meaningful drift against the model."
+    else:
+        out["verdict"] = "steady"
+        out["note"] = "Not enough history yet for a trend; no drift visible so far."
+
+    g2m = out["gust_to_mean_recent"]
+    if g2m and g2m > 2.6:
+        out["note"] = ((out["note"] or "") +
+                       f" Gusts are running {g2m:.1f}x the mean, which is high — a stiff "
+                       f"rotor loses the average before it loses the peaks.")
     return out
 
 
@@ -437,17 +572,29 @@ def main():
     except Exception as e:
         log(f"could not fetch forecast: {e}")
 
-    # 3. prune anything older than two years, to keep the file sane
+    # 3. the model's own view of the last few days, as an anemometer yardstick
+    try:
+        store.setdefault("reference", {}).update(fetch_reference_wind())
+        log("stored wind reference for the last few days")
+    except Exception as e:
+        log(f"could not fetch wind reference: {e}")
+
+    # 4. prune anything older than two years, to keep the file sane
     cutoff = (dt.date.today() - dt.timedelta(days=730)).isoformat()
     store["observations"] = {k: v for k, v in store["observations"].items() if k >= cutoff}
     store["forecasts"] = {k: v for k, v in store["forecasts"].items() if k >= cutoff}
+    store["reference"] = {k: v for k, v in store.get("reference", {}).items() if k >= cutoff}
     save_store(store)
 
-    # 4. score and publish
+    # 5. score and publish
     recent_from = (dt.date.today() - dt.timedelta(days=RECENT_DAYS)).isoformat()
     all_dates = sorted(store["observations"])
+    air = anemometer(store)
+    log(f"anemometer: {air['verdict']} — {air['note']}")
+
     payload = {
         "generated": int(time.time() * 1000),
+        "anemometer": air,
         "days_collected": len(all_dates),
         "first_date": all_dates[0] if all_dates else None,
         "last_date": all_dates[-1] if all_dates else None,

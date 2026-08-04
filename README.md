@@ -286,6 +286,8 @@ what Belchertown does. The initial value is resolved by a small inline script
 in `<head>`, before the stylesheets paint — anything in an external file
 arrives too late and you get a white flash on every load.
 
+<a href="docs/img/dashboard-dark.jpg"><img src="docs/img/dashboard-dark.jpg" width="900" alt="Dark theme"></a>
+
 The gauges, compass and barograph are SVG drawn with those same variables, so
 they follow without special handling. Highcharts caches its theme, so it is
 re-applied and the visible chart redrawn when the mode changes.
@@ -434,6 +436,33 @@ Setup in [docs/verification.md](docs/verification.md).
 
 ---
 
+### Anemometer health
+
+`verify.py` also watches the anemometer. Each night it records the station's
+daily maximum wind and gust alongside the model's for the same day, and tracks
+the ratio between them over months.
+
+The absolute ratio means little on its own — a lower mast in a sheltered
+village will always read well under an open-terrain 10 m model, and that is
+siting, not a fault. What matters is **change**. A bearing drying out adds
+friction gradually, so the ratio falls over weeks while nothing about the site
+alters. The check reports one of:
+
+| Verdict | Meaning |
+|---|---|
+| `collecting` | Fewer than 14 days recorded; says nothing yet |
+| `steady` | No meaningful drift against the model |
+| `watch` | Down 12–25% on its own baseline |
+| `check the bearing` | Down 25% or more — spin the cups by hand |
+
+Gust-to-mean ratio is tracked alongside, since a stiffening rotor loses the
+peaks before the mean. Note its blind spot: if friction drags mean and gust
+down together, that ratio holds steady and only the model comparison catches
+it. Neither test replaces the mechanical one — freely spinning cups coast for
+several seconds to a silent stop.
+
+---
+
 ## Data sources
 
 - **[Open-Meteo](https://open-meteo.com)** — forecast, ensemble and ERA5 archive
@@ -449,7 +478,7 @@ Open-Meteo's paid tier.
 
 ## Status and roadmap
 
-Version 1.4.0. Running in production at
+Version 1.5.0. Running in production at
 [digitalurban.github.io/fenland](https://digitalurban.github.io/fenland/), which
 is also the demo — so if the demo is broken, so is the author's weather station.
 
