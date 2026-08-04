@@ -40,7 +40,7 @@ window.WXCONFIG = {
     wind: "mph"
   },
 
-  /* Small "FENLAND v1.1.0" credit in the page footer, linking to the
+  /* Small "FENLAND v1.2.0" credit in the page footer, linking to the
      project. It is how people find the skin — but set false to remove it. */
   credit: true,
 

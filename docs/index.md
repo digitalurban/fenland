@@ -91,6 +91,36 @@ wind on Beaufort colours, AQI on the standard bands — and converted into your
 display units on the way through, so these tabs read in the same units as the
 rest of the page even if weeWX publishes in another.
 
+### Radar
+
+<a href="img/windy.jpg"><img src="img/windy.jpg" width="900" alt="Radar tab"></a>
+
+An embedded Windy map, centred on your coordinates and using your units, so it
+agrees with the rest of the page rather than contradicting it. Belchertown does
+this by having you paste an iframe into `radar_html`, which works but hardcodes
+the location, size and units — move the station or switch to Fahrenheit and you
+regenerate it by hand. Here it is derived from `config.js`:
+
+```js
+windy: { zoom: 8, overlay: "radar", level: "surface" }
+```
+
+Omit the block and the tab does not appear. The frame is built only when the
+tab is first opened, so if you never open it nothing ever contacts Windy — this
+is the one place Fenland talks to a third-party service rather than a CDN. It
+is granted the motion sensors so the browser stops warning about them, but
+deliberately **not** geolocation: the map already has the station coordinates,
+so that would only add the ability to locate whoever is reading the page.
+
+**`overlay: "radar"` is regional.** It is a composite of national radar
+networks — good over Europe, North America, Japan and Australia, empty over
+much of the rest of the world. Outside coverage the map looks broken when it
+is not. Use `overlay: "rain"` there: modelled precipitation, global but
+forecast rather than observed.
+
+`embed:` takes raw iframe markup if you would rather configure Windy yourself,
+or use another provider entirely.
+
 ---
 
 ## Install
@@ -260,33 +290,6 @@ sentence that doesn't apply where you are.
 
 ---
 
-### Radar
-
-
-An embedded Windy map, centred on your coordinates and using your units, so
-it agrees with the rest of the page rather than contradicting it. Belchertown
-does this by having you paste an iframe into `radar_html`, which works but
-hardcodes the location, size and units — move the station or switch to
-Fahrenheit and you regenerate it by hand. Here it's derived from `config.js`.
-
-```js
-windy: { zoom: 8, overlay: "radar", level: "surface" }
-```
-
-Omit the block and the tab doesn't appear. The frame is built only when the
-tab is first opened, so if you never open it nothing contacts Windy — this is
-the one place Fenland talks to a third-party service rather than a CDN.
-
-**`overlay: "radar"` is regional.** It's a composite of national radar
-networks: good over Europe, North America, Japan and Australia, empty over
-much of the rest of the world. Outside coverage the map looks broken when it
-isn't. Use `overlay: "rain"` there — modelled precipitation, global but
-forecast rather than observed.
-
-`embed:` takes raw iframe markup if you'd rather configure Windy yourself, or
-use another provider entirely.
-
----
 
 ### Live data
 
@@ -390,7 +393,7 @@ Open-Meteo's paid tier.
 
 ## Status and roadmap
 
-Version 1.1.0. Running in production at
+Version 1.2.0. Running in production at
 [digitalurban.github.io/fenland](https://digitalurban.github.io/fenland/), which
 is also the demo — so if the demo is broken, so is the author's weather station.
 

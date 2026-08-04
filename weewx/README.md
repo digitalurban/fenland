@@ -52,9 +52,15 @@ Before `</body>`:
 <script src="/fenland/src/forecast.js"></script>
 <script src="/fenland/src/climate.js"></script>
 <script src="/fenland/src/verify-panel.js"></script>   <!-- optional -->
+<script src="/fenland/src/windy.js"></script>          <!-- optional: radar -->
 ```
 
-If you update Fenland later, add `?v=1.1.0` (or whatever version you are on)
+`windy.js` needs a container with `id="windyFrame"` and a tab button with
+`id="tabBtnWindy"` in your own markup — copy `panes/windy.html` for the
+shape. Without a `windy` block in `config.js` it hides itself and does
+nothing, so it is safe to include either way.
+
+If you update Fenland later, add `?v=1.2.0` (or whatever version you are on)
 to each `src` above and bump it when you upgrade. Browsers cache these files
 hard, so without it your visitors keep running the old copy. The standalone
 `index.html` does this automatically via `build.py`; hand-written tags do not.
