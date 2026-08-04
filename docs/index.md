@@ -561,10 +561,11 @@ hardware and keeping the archive.
 
 The History and Stats tabs read the JSON published by the
 [Belchertown skin](https://github.com/poblabs/weewx-belchertown) rather than
-reinventing it. Fenland is a companion to it, not a competitor — Belchertown is the more established skin and worth your time
-either way — the two coexist happily, and if you would rather keep your existing
+reinventing it. Fenland is a companion to that skin, not a competitor:
+Belchertown is far more established, and worth your time whichever you end up
+running. The two coexist happily, and if you would rather keep your existing
 site and take only the Forecast, Ensemble and Climate panels, that is a
-documented path: see [weewx/README.md](weewx/README.md).
+documented path — see [weewx/README.md](weewx/README.md).
 
 Weather data from [Open-Meteo](https://open-meteo.com), whose free, keyless,
 attribution-only API is the reason a project like this can exist at all.
