@@ -169,3 +169,32 @@ A verdict of `check the bearing` means it is reading 25% or more below its own
 established baseline. Confirm mechanically before buying parts: spin the cups
 by hand — they should turn freely and coast several seconds to a smooth, silent
 stop. Grinding, roughness, or stopping almost at once is the bearing.
+
+
+### Backfilling the wind history
+
+Started from scratch the anemometer check needs a fortnight before it says
+anything and a couple of months before it can see a trend. It does not have to
+start from scratch: Belchertown's `year.json` already holds a daily maximum
+wind and gust for every day of the year, and ERA5 covers the same dates.
+
+```bash
+python3 backfill_wind.py --dry-run    # report only
+python3 backfill_wind.py              # write, after taking a backup
+```
+
+It never overwrites a value that is already there, so it is safe to re-run and
+safe to run against an existing history.
+
+Two things make the join valid, and the script checks both rather than assuming
+them. `year.json`'s `windSpeed` and `windGust` carry no `aggregate_type`, so
+they are daily *maxima* — the same statistic the nightly run takes from
+`weewx.json`. And their `yAxis_label` reads mph, which is what the archive is
+queried in. If either is untrue of your own output the script stops and says
+so instead of quietly poisoning the baseline.
+
+The reference comes from ERA5 rather than the forecast API's analysis, for both
+the backfill and the nightly run. That matters more than it sounds: if the two
+used different sources, the join between backfilled and live rows would appear
+as a step change in the ratio — which is exactly the shape this check hunts
+for, so a methodology artefact would read as a failing bearing.

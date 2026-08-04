@@ -60,6 +60,7 @@ TZ = _cfg("TZ", "Europe/London")
 
 WEEWX_JSON_URL = _cfg("WEEWX_JSON_URL")
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
+ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 
 PUBLISH = str(_cfg("PUBLISH", "ftp")).lower()
 LOCAL_OUTPUT_DIR = _cfg("LOCAL_OUTPUT_DIR", ".")
@@ -245,25 +246,43 @@ def fetch_forecast():
 
 
 # ── anemometer health ─────────────────────
-def fetch_reference_wind(days=3):
-    """The model's own view of the last few days, used as a yardstick for the
-    station's anemometer. Not a forecast — past_days returns the analysis, so
-    it is the best available estimate of what the wind actually did."""
+def fetch_reference_wind(start=None, end=None, days=21):
+    """The reanalysis view of what the wind actually did, used as a yardstick
+    for the station's anemometer.
+
+    ERA5 rather than the forecast API's analysis, deliberately. The backfill
+    script needs to reach back months, which only the archive can do — and if
+    the two used different sources, the join between backfilled and live rows
+    would show up as a step change in the ratio. That is precisely the shape
+    this check hunts for, so a methodology artefact would read as a failing
+    bearing.
+
+    ERA5 lags about five days. That does not matter for a trend measured in
+    months, and the window requested here is wide enough that days fill in as
+    they become available.
+    """
+    if end is None:
+        end = dt.date.today()
+    if start is None:
+        start = end - dt.timedelta(days=days)
     params = {
         "latitude": f"{LAT:.4f}", "longitude": f"{LON:.4f}",
         "daily": "wind_speed_10m_max,wind_gusts_10m_max",
         "timezone": TZ, "wind_speed_unit": "mph",
-        "past_days": days, "forecast_days": 1,
+        "start_date": start.isoformat(), "end_date": end.isoformat(),
     }
-    r = requests.get(FORECAST_URL, params=params, timeout=45)
+    r = requests.get(ARCHIVE_URL, params=params, timeout=60)
     r.raise_for_status()
     d = (r.json() or {}).get("daily") or {}
+    spd = d.get("wind_speed_10m_max") or []
+    gus = d.get("wind_gusts_10m_max") or []
     out = {}
     for i, date in enumerate(d.get("time", [])):
-        spd = (d.get("wind_speed_10m_max") or [None])[i:i+1]
-        gus = (d.get("wind_gusts_10m_max") or [None])[i:i+1]
-        out[date] = {"wind": spd[0] if spd else None,
-                     "gust": gus[0] if gus else None}
+        w = spd[i] if i < len(spd) else None
+        g = gus[i] if i < len(gus) else None
+        if w is None and g is None:
+            continue                       # not yet published by ERA5
+        out[date] = {"wind": w, "gust": g}
     return out
 
 

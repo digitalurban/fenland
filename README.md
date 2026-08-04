@@ -474,6 +474,10 @@ alters. The check reports one of:
 | `watch` | Down 12–25% on its own baseline |
 | `check the bearing` | Down 25% or more — spin the cups by hand |
 
+If you already publish Belchertown's `year.json`, `scripts/backfill_wind.py`
+seeds this from the history you have rather than making you wait months for
+a baseline.
+
 Gust-to-mean ratio is tracked alongside, since a stiffening rotor loses the
 peaks before the mean. Note its blind spot: if friction drags mean and gust
 down together, that ratio holds steady and only the model comparison catches
