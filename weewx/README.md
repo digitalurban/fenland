@@ -54,7 +54,7 @@ Before `</body>`:
 <script src="/fenland/src/verify-panel.js"></script>   <!-- optional -->
 ```
 
-If you update Fenland later, add `?v=1.0.0` (or whatever version you are on)
+If you update Fenland later, add `?v=1.1.0` (or whatever version you are on)
 to each `src` above and bump it when you upgrade. Browsers cache these files
 hard, so without it your visitors keep running the old copy. The standalone
 `index.html` does this automatically via `build.py`; hand-written tags do not.
