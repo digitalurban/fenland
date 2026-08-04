@@ -25,6 +25,14 @@ window.WXCONFIG = {
 
   units: { wind: "mph" },
 
+  /* Anemometer is on a 6 m mast, so it reads about 68% of the 10 m
+     reference. Of that shortfall, 1.21 is height and 1.21 is shelter from
+     the surrounding trees. Correcting the height only — the shelter is real
+     wind at this site, and scaling it away would make the numbers agree with
+     a model rather than with reality. Display only; the weeWX archive still
+     holds what the instrument actually measured. */
+  windScale: 1.21,
+
   /* ── live data over MQTT ────────────────────────────────────────────
      Anonymous read over websockets — no credentials used or wanted.     */
   mqtt: {
