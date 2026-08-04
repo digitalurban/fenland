@@ -82,6 +82,13 @@ MODELS = getattr(config, "MODELS", ["best_match", "ukmo_seamless", "ecmwf_ifs025
                                     "icon_seamless", "gfs_seamless"])
 PRIMARY = getattr(config, "PRIMARY", "best_match")
 
+# An optional fixed correction to test alongside the measured site factor.
+# Set WIND_SCALE in config.py to the multiplier you are considering applying
+# in weeWX or Cumulus, and the league table scores it as its own column, so
+# you can see whether it fits your site better than the empirical one.
+WIND_SCALE = getattr(config, "WIND_SCALE", None)
+GUST_SCALE = getattr(config, "GUST_SCALE", WIND_SCALE)
+
 
 
 def log(msg):
@@ -448,7 +455,7 @@ def score(store, since=None, model=PRIMARY, factors=(None, None)):
             o = obs[target]
             b = leads.setdefault(lead, {
                 "n": 0, "tmax_e": [], "tmin_e": [], "rain_e": [],
-                "wind_e": [], "gust_e": [],
+                "wind_e": [], "gust_e": [], "wind_s": [], "gust_s": [],
                 "hit": 0, "miss": 0, "false_alarm": 0, "correct_dry": 0,
             })
             counted = False
@@ -457,11 +464,17 @@ def score(store, since=None, model=PRIMARY, factors=(None, None)):
                     b[bucket].append(fc[key] - o[key])
                     counted = True
 
-            # wind and gust, with the observation lifted to a 10m equivalent
+            # wind and gust, with the observation lifted to a 10m equivalent.
+            # Two variants: the measured site factor, and a fixed scale you
+            # are considering applying at source. Scoring both is the only
+            # honest way to choose between them.
             for key, bucket, factor in (("wind", "wind_e", f_spd), ("gust", "gust_e", f_gst)):
                 if factor and o.get(key) is not None and fc.get(key) is not None:
                     b[bucket].append(fc[key] - (o[key] / factor))
                     counted = True
+            for key, bucket, scale in (("wind", "wind_s", WIND_SCALE), ("gust", "gust_s", GUST_SCALE)):
+                if scale and o.get(key) is not None and fc.get(key) is not None:
+                    b[bucket].append(fc[key] - (o[key] * scale))
             if o.get("rain") is not None and fc.get("rain") is not None:
                 f_wet, o_wet = fc["rain"] >= WET, o["rain"] >= WET
                 if f_wet and o_wet:
@@ -492,6 +505,8 @@ def score(store, since=None, model=PRIMARY, factors=(None, None)):
             "rain": stats(b["rain_e"]),
             "wind": stats(b["wind_e"]),
             "gust": stats(b["gust_e"]),
+            "wind_scaled": stats(b["wind_s"]),
+            "gust_scaled": stats(b["gust_s"]),
             # probability of detection and false alarm ratio, the standard pair
             "pod": round(hits / (hits + misses), 2) if (hits + misses) else None,
             "far": round(fa / (hits + fa), 2) if (hits + fa) else None,
@@ -550,6 +565,9 @@ def league(store, since=None, lead=1, factors=(None, None)):
                 "wind_bias": (L["wind"] or {}).get("bias"),
                 "gust_mae": (L["gust"] or {}).get("mae"),
                 "gust_bias": (L["gust"] or {}).get("bias"),
+                "wind_scaled_mae": (L["wind_scaled"] or {}).get("mae"),
+                "wind_scaled_bias": (L["wind_scaled"] or {}).get("bias"),
+                "gust_scaled_mae": (L["gust_scaled"] or {}).get("mae"),
                 "pod": L["pod"], "far": L["far"],
             })
     rows.sort(key=lambda r: (r["tmax_mae"] is None, r["tmax_mae"]))
@@ -670,6 +688,7 @@ def main():
     # 5. score and publish
     recent_from = (dt.date.today() - dt.timedelta(days=RECENT_DAYS)).isoformat()
     all_dates = scored_dates(store)
+    recent_from_pre = (dt.date.today() - dt.timedelta(days=RECENT_DAYS)).isoformat()
     f_spd, f_gst = site_wind_factor(store)
     factors = (f_spd, f_gst)
     if f_spd:
@@ -680,12 +699,23 @@ def main():
         log("site wind factor: not enough paired wind history yet — "
             "wind and gust left unscored")
 
+    if WIND_SCALE:
+        _l1 = [r for r in score(store, since=recent_from_pre, factors=factors) if r["lead"] == 1]
+        if _l1 and _l1[0].get("wind") and _l1[0].get("wind_scaled"):
+            a, bq = _l1[0]["wind"]["mae"], _l1[0]["wind_scaled"]["mae"]
+            log("wind scale test at day 1: measured factor %.2f gives MAE %.2f, "
+                "fixed scale %.2f gives MAE %.2f — %s fits better"
+                % (1/f_spd if f_spd else 0, a, WIND_SCALE, bq,
+                   "the measured factor" if a <= bq else "your fixed scale"))
+
     air = anemometer(store)
     log(f"anemometer: {air['verdict']} — {air['note']}")
 
     payload = {
         "generated": int(time.time() * 1000),
         "anemometer": air,
+        "wind_scale_tested": (None if not WIND_SCALE else
+                              {"wind": WIND_SCALE, "gust": GUST_SCALE}),
         "site_wind_factor": (None if f_spd is None else
                              {"speed": round(f_spd, 3), "gust": round(f_gst, 3),
                               "note": "station wind divided by this before scoring, "

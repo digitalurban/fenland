@@ -40,7 +40,7 @@ window.WXCONFIG = {
     wind: "mph"
   },
 
-  /* Small "FENLAND v1.6.1" credit in the page footer, linking to the
+  /* Small "FENLAND v1.7.0" credit in the page footer, linking to the
      project. It is how people find the skin — but set false to remove it. */
   credit: true,
 
@@ -118,6 +118,26 @@ window.WXCONFIG = {
 
      Values are US AQI (0-500), matching the coloured bar on the tile.    */
   // airQuality: "auto",
+
+  /* ── wind height correction ─────────────────────────────────────────
+     An anemometer below 10m reads a fixed fraction of the reference wind.
+     Pure height, over rough ground, costs roughly 15% at 6m and 10% at 8m.
+     Set this to correct the DISPLAY towards a 10m equivalent.
+
+       6m mast  ->  about 1.17
+       8m mast  ->  about 1.08
+       10m      ->  leave unset
+
+     Display only — your weeWX archive is untouched, so the correction can be
+     changed or removed at any time and nothing is rewritten. The footer
+     states the factor, because an adjusted reading shown as raw is worse
+     than no adjustment at all.
+
+     What it should NOT be used for: shelter from nearby trees or buildings.
+     That is real wind at your site, not an instrument error, and scaling it
+     away makes your numbers match a model rather than reality. Correct for
+     height; think twice before correcting for exposure.                    */
+  // windScale: 1.17,
 
   /* ── hardware label ─────────────────────────────────────────────────
      Shown in the header after the coordinates, e.g. "DAVIS VANTAGE".     */

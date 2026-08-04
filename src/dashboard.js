@@ -23,7 +23,7 @@
   /* Bump on release. Shown in the footer credit and worth quoting in any
      bug report — "which version are you on" is the first question. */
   const FENLAND = {
-    version: "1.6.1",
+    version: "1.7.0",
     url: "https://github.com/digitalurban/fenland"
   };
 
@@ -124,11 +124,26 @@
   const DIAL_MAX = (DIAL[DISP_WIND] || DIAL.mph).max;
   const DIAL_MAJ = (DIAL[DISP_WIND] || DIAL.mph).maj;
 
+  /* Optional standardisation to a 10m equivalent. A mast lower than 10m reads
+     a fixed fraction of the reference wind — pure height, over rough ground,
+     costs roughly 15% at 6m. Set `windScale` to correct for it.
+
+     Display only. The archive weeWX keeps stays exactly what the instrument
+     measured, so nothing is rewritten and the correction can be changed or
+     removed at any time. The footer states the factor, because an adjusted
+     reading presented as raw is worse than no adjustment.
+
+     Note what it cannot fix: shelter from nearby trees or buildings is real
+     wind at your site, not an instrument error. Scaling it away makes the
+     number match a model rather than reality. Correct for height; think
+     harder before correcting for exposure. */
+  const WIND_SCALE = Number(CFG.windScale) > 0 ? Number(CFG.windScale) : 1;
+
   const inWind = v => {
     if (v == null) return v;
     const from = WIND_TO_MPH[_su("wind")] || 1;
     const to = MPH_TO_WIND[String((CFG.units && CFG.units.wind) || "mph").toLowerCase()] || 1;
-    return v * from * to;
+    return v * from * to * WIND_SCALE;
   };
 
   /* ── loop packet field names ──────────────────────────────────────────
@@ -1229,7 +1244,7 @@
       const mobileWrap = document.getElementById('mobileLayout');
       if (window.innerWidth < 1024 && mobileWrap) {
         if(!document.getElementById('speedSvg_mob')) {
-          mobileWrap.innerHTML = `<header class="head"><div class="brand"><div class="name">${CFG.place || "Weather Station"}</div><div class="coords">${stationSubtitle()}</div></div><div class="clock"><div class="time" id="clockTime_mob">—:—</div><div class="dateline" id="clockDate_mob">——</div></div></header><section class="hero"><div class="hero-top"><div class="hero-glyph" id="heroGlyph_mob"></div><div class="hero-temp"><span id="airTemp_mob">--</span><span class="deg wx-unit-temp">°C</span></div></div><div class="hero-cond" id="condition_mob">Connecting...</div><div class="hero-extremes"><span class="hi-t">MAX <span id="tempMax_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="lo-t">MIN <span id="tempMin_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="trend-inline"><span id="tempTrendArrow_mob">→</span> <span id="tempTrendState_mob">STEADY</span> <span id="tempTrendRate_mob">—</span></span></div><div class="hero-sub"><div class="cell"><div class="lbl">Feels like</div><div class="val"><span id="feelsLike_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Dew point</div><div class="val"><span id="dewPoint_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Humidex</div><div class="val"><span id="humidex_mob">--</span><span class="u wx-unit-temp">°C</span></div></div></div></section><section class="baro"><div class="baro-head"><div class="eyebrow">Barometric pressure</div><div class="baro-read"><span id="baroNow_mob">----</span><span class="unit"><span class="wx-unit-pres">mb</span> · sea level</span><span class="trend-inline baro-trend-inline"><span id="tendArrow_mob">→</span> <span id="tendState_mob">STEADY</span> <span id="tendRate_mob">—</span></span></div></div><div class="baro-chart"><svg id="baroSvg_mob" viewBox="0 0 960 360" preserveAspectRatio="none"></svg></div><div class="nowcast"><div class="nc-lbl">Tendency forecast · next 6–12 h</div><div class="nc-txt" id="nowcastText_mob">—</div></div></section><section class="wind"><div class="wind-dials" id="windDials_mob"><div class="compass"><svg id="speedSvg_mob" viewBox="0 0 480 480"></svg></div><div class="compass"><svg id="compassSvg_mob" viewBox="0 0 480 480"></svg></div></div><div class="wind-readout-row"><div class="wind-data-cell"><div class="lbl">Wind speed</div><div class="val"><span id="windSpeed_mob">--</span><span class="u wx-unit-wind"> mph</span></div><div class="sub-txt" id="beaufort_mob">—</div></div><div class="wind-data-cell dir-cell"><div class="lbl">Direction</div><div class="val"><span id="windDir_text_mob">--</span></div></div><div class="wind-data-cell"><div class="lbl">Gust profile</div><div class="val"><span id="windGust_mob">--</span><span class="u wx-unit-wind"> mph</span></div></div></div></section><section class="tiles" id="tiles_mob"></section><footer class="foot"><span>SOURCE — MQTT weather feed</span><span id="footSun_mob">SUNRISE —:— · SUNSET —:—</span><span id="footStatus_mob">CONNECTING…</span><span id="footRefresh_mob">—</span><span class="foot-action" id="themeToggle_mob" title="Theme">◐ AUTO</span><span class="foot-action" id="detailsTrigger_mob">HISTORY &amp; FORECAST ▸</span><span class="foot-credit" id="footCredit_mob"></span></footer>`; 
+          mobileWrap.innerHTML = `<header class="head"><div class="brand"><div class="name">${CFG.place || "Weather Station"}</div><div class="coords">${stationSubtitle()}</div></div><div class="clock"><div class="time" id="clockTime_mob">—:—</div><div class="dateline" id="clockDate_mob">——</div></div></header><section class="hero"><div class="hero-top"><div class="hero-glyph" id="heroGlyph_mob"></div><div class="hero-temp"><span id="airTemp_mob">--</span><span class="deg wx-unit-temp">°C</span></div></div><div class="hero-cond" id="condition_mob">Connecting...</div><div class="hero-extremes"><span class="hi-t">MAX <span id="tempMax_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="lo-t">MIN <span id="tempMin_mob">--</span><span class="wx-unit-temp">°C</span></span><span class="trend-inline"><span id="tempTrendArrow_mob">→</span> <span id="tempTrendState_mob">STEADY</span> <span id="tempTrendRate_mob">—</span></span></div><div class="hero-sub"><div class="cell"><div class="lbl">Feels like</div><div class="val"><span id="feelsLike_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Dew point</div><div class="val"><span id="dewPoint_mob">--</span><span class="u wx-unit-temp">°C</span></div></div><div class="cell"><div class="lbl">Humidex</div><div class="val"><span id="humidex_mob">--</span><span class="u wx-unit-temp">°C</span></div></div></div></section><section class="baro"><div class="baro-head"><div class="eyebrow">Barometric pressure</div><div class="baro-read"><span id="baroNow_mob">----</span><span class="unit"><span class="wx-unit-pres">mb</span> · sea level</span><span class="trend-inline baro-trend-inline"><span id="tendArrow_mob">→</span> <span id="tendState_mob">STEADY</span> <span id="tendRate_mob">—</span></span></div></div><div class="baro-chart"><svg id="baroSvg_mob" viewBox="0 0 960 360" preserveAspectRatio="none"></svg></div><div class="nowcast"><div class="nc-lbl">Tendency forecast · next 6–12 h</div><div class="nc-txt" id="nowcastText_mob">—</div></div></section><section class="wind"><div class="wind-dials" id="windDials_mob"><div class="compass"><svg id="speedSvg_mob" viewBox="0 0 480 480"></svg></div><div class="compass"><svg id="compassSvg_mob" viewBox="0 0 480 480"></svg></div></div><div class="wind-readout-row"><div class="wind-data-cell"><div class="lbl">Wind speed</div><div class="val"><span id="windSpeed_mob">--</span><span class="u wx-unit-wind"> mph</span></div><div class="sub-txt" id="beaufort_mob">—</div></div><div class="wind-data-cell dir-cell"><div class="lbl">Direction</div><div class="val"><span id="windDir_text_mob">--</span></div></div><div class="wind-data-cell"><div class="lbl">Gust profile</div><div class="val"><span id="windGust_mob">--</span><span class="u wx-unit-wind"> mph</span></div></div></div></section><section class="tiles" id="tiles_mob"></section><footer class="foot"><span id="footSrc_mob">SOURCE — MQTT weather feed</span><span id="footSun_mob">SUNRISE —:— · SUNSET —:—</span><span id="footStatus_mob">CONNECTING…</span><span id="footRefresh_mob">—</span><span class="foot-action" id="themeToggle_mob" title="Theme">◐ AUTO</span><span class="foot-action" id="detailsTrigger_mob">HISTORY &amp; FORECAST ▸</span><span class="foot-credit" id="footCredit_mob"></span></footer>`; 
 
           const mobileVectors = buildDialVectors(true);
           const speedSvgMob = document.getElementById('speedSvg_mob');
@@ -1251,6 +1266,7 @@
         document.getElementById('tempMin_mob').textContent = dayMinText;
         document.getElementById('tempMax_mob').textContent = dayMaxText;
         labelUnits();   // the mobile layout is rebuilt on resize
+        labelWindScale();
         applyNowcastSetting();
         paintThemeToggle();
         renderCredit();
@@ -1446,6 +1462,16 @@
       return U.tv(c == null ? s : pick(s, c));
     }
 
+    /* Say so where it can be seen, not only in the config file. */
+    function labelWindScale() {
+      if (WIND_SCALE === 1) return;
+      const txt = " · WIND \u00D7" + WIND_SCALE.toFixed(2) + " TO 10 M";
+      ["footSrc", "footSrc_mob"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.textContent.indexOf("WIND \u00D7") === -1) el.textContent += txt;
+      });
+    }
+
     function labelUnits() {
       if (typeof U === "undefined") return;
       document.querySelectorAll(".wx-unit-temp").forEach(e => e.textContent = U.tempUnit);
@@ -1462,6 +1488,7 @@
 
       render();
       labelUnits();
+      labelWindScale();
       applyNowcastSetting();
       watchTheme();
       refreshModelAir();

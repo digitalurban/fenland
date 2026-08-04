@@ -178,7 +178,7 @@ window.__VERIFY__ = (function () {
         "MEAN ABSOLUTE ERROR ON TOMORROW'S MAXIMUM, BEST FIRST</div>" +
       "<div class='stats-table-scroll'><table class='stats-table'><thead><tr>" +
         "<th>Model</th><th>Day-1 error</th><th>Day-1 bias</th><th>Day-3 error</th>" +
-        "<th>Wind error</th><th>Gust error</th>" +
+        "<th>Wind error</th><th>Gust error</th><th>Wind &times;scale</th>" +
         "<th>Rain found</th><th>False alarm</th><th>Days</th>" +
       "</tr></thead><tbody>" +
       rows.map((r, i) =>
@@ -190,6 +190,7 @@ window.__VERIFY__ = (function () {
         "<td>" + (d3[r.model] != null ? U.dt(d3[r.model]) : "–") + "</td>" +
         "<td>" + (r.wind_mae != null ? U.w(r.wind_mae, 1) : "–") + "</td>" +
         "<td>" + (r.gust_mae != null ? U.w(r.gust_mae, 1) : "–") + "</td>" +
+        "<td>" + (r.wind_scaled_mae != null ? U.w(r.wind_scaled_mae, 1) : "–") + "</td>" +
         "<td>" + (r.pod != null ? Math.round(r.pod*100) + "%" : "–") + "</td>" +
         "<td>" + (r.far != null ? Math.round(r.far*100) + "%" : "–") + "</td>" +
         "<td>" + r.n + "</td></tr>").join("") +
@@ -206,6 +207,10 @@ window.__VERIFY__ = (function () {
         "THAT NEEDS ABOUT A MONTH OF WIND HISTORY ALONGSIDE THE MODEL.</div>";
     }
     const pct = Math.round(f.speed * 100);
+    const ts = j.wind_scale_tested;
+    const scaleNote = ts ? " THE FINAL COLUMN INSTEAD APPLIES A FIXED \u00D7" +
+      Number(ts.wind).toFixed(2) + ", THE CORRECTION YOU ARE CONSIDERING AT SOURCE \u2014 " +
+      "WHICHEVER COLUMN SHOWS THE LOWER ERROR IS THE BETTER FIT FOR THIS SITE." : "";
     /* Gusts were added to the forecast fetch after wind, so there is a spell
        where wind scores and gust does not. A column of dashes with no reason
        given reads as a fault. */
@@ -221,7 +226,7 @@ window.__VERIFY__ = (function () {
       pct + "% OF THE OPEN-TERRAIN REFERENCE \u2014 NORMAL FOR A LOWER MAST AMONG TREES OR " +
       "BUILDINGS \u2014 SO READINGS ARE DIVIDED BY " + f.speed.toFixed(2) +
       " BEFORE COMPARING, OR EVERY MODEL WOULD SHOW THE SAME LARGE NEGATIVE BIAS THAT " +
-      "MEASURES THE MAST RATHER THAN THE FORECAST." + pending + "</div>";
+      "MEASURES THE MAST RATHER THAN THE FORECAST." + scaleNote + pending + "</div>";
   }
 
   function narrative(j, recent) {

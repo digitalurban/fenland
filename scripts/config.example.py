@@ -58,3 +58,14 @@ PRIMARY = "best_match"           # the one your web page displays
 MAX_LEAD = 10                    # days ahead to score
 RECENT_DAYS = 30                 # window for the "lately" figures
 WET = 0.2                        # mm, the threshold for "it rained"
+
+# ── wind scale test ──────────────────────────────────────────────────────
+# Optional. If you are considering applying a fixed wind correction in weeWX
+# or Cumulus, set it here too and the league table scores it as its own
+# column beside the factor measured from your own data. Whichever shows the
+# lower error is the better fit for your site.
+#
+#   6m mast -> about 1.17   |   8m mast -> about 1.08
+#
+# WIND_SCALE = 1.17
+# GUST_SCALE = 1.17          # defaults to WIND_SCALE

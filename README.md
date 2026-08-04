@@ -501,7 +501,7 @@ Open-Meteo's paid tier.
 
 ## Status and roadmap
 
-Version 1.6.1. Running in production at
+Version 1.7.0. Running in production at
 [digitalurban.github.io/fenland](https://digitalurban.github.io/fenland/), which
 is also the demo — so if the demo is broken, so is the author's weather station.
 
