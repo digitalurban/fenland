@@ -209,17 +209,23 @@ window.__WXCOLOURS__ = (function () {
   // Highcharts is lazy-loaded, so patch on whichever comes first: it is
   // already present, the page's loader resolves, or a short poll finds it.
   patch();
-  if (typeof window.ensureHighcharts === "function") {
-    const origEnsure = window.ensureHighcharts;
-    window.ensureHighcharts = function () {
-      return Promise.resolve(origEnsure.apply(this, arguments)).then(function (r) { patch(); return r; });
-    };
-  }
+  /* NOTE: this used to also wrap window.ensureHighcharts, which was dead code —
+     that function lives inside dashboard.js's closure and was never global, so
+     the wrap never fired. The only thing installing the patch was the 500ms
+     poll below, which races the chart code: Highcharts resolves on script load
+     and charts are drawn immediately, so anything created inside that window
+     got no zones and fell back to the default palette (a blue line). It showed
+     up on phones, where the timing is slower. dashboard.js now calls
+     __WXCOLOURS__.patch() directly after loading Highcharts; the poll is kept
+     only as a backstop for anything that draws by another route. */
   let tries = 0;
   const poll = setInterval(function () {
     if (patch() || ++tries > 60) clearInterval(poll);
   }, 500);
 
   return { SCALES: SCALES, TEMP_SCALE: TEMP, zones: zones, scaleFor: scaleFor,
+           /* Callable so the chart code can guarantee the wrapper is installed
+              before it draws, rather than hoping the poll above won already. */
+           patch: patch,
            zonesFor: function (name) { const s = scaleFor(name); return s ? zones(s) : []; } };
 })();

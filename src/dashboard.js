@@ -305,8 +305,16 @@
     let forecastDataCache = null; 
     let currentChartSpan = 'day'; 
 
+    /* colours.js wraps Highcharts.chart() to colour series by value. Install
+       that wrapper here, before anything draws — otherwise the first charts
+       race its poll and render in the default palette. */
+    function applyColourPatch() {
+      const c = window.__WXCOLOURS__;
+      if (c && typeof c.patch === 'function') c.patch();
+    }
+
     function ensureHighcharts() {
-      if (typeof Highcharts !== 'undefined') return Promise.resolve();
+      if (typeof Highcharts !== 'undefined') { applyColourPatch(); return Promise.resolve(); }
       if (highchartsLoadPromise) return highchartsLoadPromise;
       highchartsLoadPromise = new Promise((resolve, reject) => {
         const s = document.createElement('script');
@@ -314,7 +322,7 @@
         s.onload = resolve;
         s.onerror = () => reject(new Error('Highcharts failed to load'));
         document.head.appendChild(s);
-      });
+      }).then(applyColourPatch);
       return highchartsLoadPromise;
     } 
 
