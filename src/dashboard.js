@@ -23,7 +23,7 @@
   /* Bump on release. Shown in the footer credit and worth quoting in any
      bug report — "which version are you on" is the first question. */
   const FENLAND = {
-    version: "1.2.0",
+    version: "1.3.0",
     url: "https://github.com/digitalurban/fenland"
   };
 
@@ -223,6 +223,16 @@
     let liveLightningCount = null; 
     let liveLightningDistance = null; 
     let liveAqiTrend = null;
+    /* Open-Meteo values, used only where the station has no sensor. */
+    let modelAqi = null, modelPm25 = null;
+    function refreshModelAir() {
+      if (!window.__AIRQ__ || !window.__AIRQ__.enabled) return;
+      if (TOPIC_AIRGRADIENT) return;              // a real sensor is configured
+      window.__AIRQ__.current().then(v => {
+        if (!v) return;
+        modelAqi = v.aqi; modelPm25 = v.pm25;
+      });
+    }
     let currentCompassHeading = 0; 
     let currentCompassHeading_mob = 0;
     let currentGustHeading = 0; 
@@ -325,6 +335,59 @@
       }).then(applyColourPatch);
       return highchartsLoadPromise;
     } 
+
+    /* ── theme ──────────────────────────────────────────────────────────
+       The palette lives entirely in CSS variables, so switching themes is
+       just an attribute on <html>. The initial value is set by an inline
+       script in the head — before first paint, so there is no white flash —
+       and this keeps it in step afterwards: the OS setting can change while
+       the page is open, and in "sun" mode the sun keeps moving.            */
+    const THEME_MODE = String(CFG.theme || "auto").toLowerCase();
+    const darkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+
+    function wantsDark() {
+      if (THEME_MODE === "dark") return true;
+      if (THEME_MODE === "light") return false;
+      if (THEME_MODE === "sun" && CFG.lat != null && CFG.lon != null) {
+        const now = new Date();
+        const t = getSunTimes(now, CFG.lat, CFG.lon);
+        if (!t || !t.sunrise || !t.sunset) return false;
+        return now < t.sunrise || now > t.sunset;
+      }
+      return !!(darkQuery && darkQuery.matches);
+    }
+
+    function applyTheme() {
+      const dark = wantsDark();
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      if (dark === isDark) return;                       // nothing to do
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+
+      /* Highcharts caches the theme in setOptions, and existing charts keep
+         the colours they were built with. Re-theme, then redraw whatever is
+         on screen; the other panels rebuild when their tab is next opened. */
+      highchartsThemed = false;
+      if (typeof Highcharts !== "undefined") {
+        themeHighcharts();
+        if (document.getElementById("paneCharts")?.classList.contains("active")) {
+          renderCharts(currentChartSpan);
+        }
+      }
+      /* The barograph and dials are SVG drawn with var(--…) fills, so they
+         reflow on the next render tick without being touched here. */
+    }
+
+    function watchTheme() {
+      if (THEME_MODE === "auto" && darkQuery) {
+        const on = () => applyTheme();
+        darkQuery.addEventListener ? darkQuery.addEventListener("change", on)
+                                   : darkQuery.addListener(on);
+      }
+      /* "sun" has no event to listen for, so check occasionally. A theme that
+         flips a few minutes late at dusk is not worth a tighter loop. */
+      if (THEME_MODE === "sun") setInterval(applyTheme, 5 * 60 * 1000);
+      applyTheme();
+    }
 
     function themeHighcharts() {
       if (highchartsThemed || typeof Highcharts === 'undefined') return;
@@ -449,10 +512,25 @@
         // 2. Fetch & Render Air Quality History JSON (day_aq.json, week_aq.json, etc.)
         try {
           const aqBase = STATION.airQualityBase || "";
-          if (!aqBase) throw new Error("station.airQualityBase not configured");
-          const aqRes = await fetch(`${aqBase}${span}_aq.json?cacheburst=` + Date.now());
+          let aqData = null;
+          let aqSource = "station";
 
-          const aqData = await aqRes.json();
+          if (aqBase) {
+            const aqRes = await fetch(`${aqBase}${span}_aq.json?cacheburst=` + Date.now());
+            aqData = await aqRes.json();
+          } else if (window.__AIRQ__ && window.__AIRQ__.enabled) {
+            /* no sensor configured — model it from Open-Meteo instead of
+               leaving an empty card */
+            aqData = await window.__AIRQ__.history(span);
+            aqSource = "openmeteo";
+            if (!aqData) {
+              throw new Error(window.__AIRQ__.spans.indexOf(span) === -1
+                ? "Open-Meteo air quality does not go back a " + span
+                : "Open-Meteo air quality unavailable");
+            }
+          } else {
+            throw new Error("no air quality source configured");
+          }
 
           Highcharts.chart('chartAirQuality', {
             chart: { type: 'line', height: 240 },
@@ -468,9 +546,9 @@
             ]
           });
         } catch (aqErr) {
-          console.warn("Air quality JSON file not yet created or loading...", aqErr);
+          console.warn("Air quality history unavailable:", aqErr.message);
           const aqEl = document.getElementById('chartAirQuality');
-          if (aqEl) aqEl.innerHTML = '<div class="chart-loading">Air quality history loading/building…</div>';
+          if (aqEl) aqEl.innerHTML = '<div class="chart-loading">' + aqErr.message + '</div>';
         }
 
       } catch (e) {
@@ -1000,10 +1078,13 @@
       const activeRainToday = inRain2mm(parseFloat(data[FIELD.dayRain])) > 0;
       const activeStormRain = inRain2mm(parseFloat(data[FIELD.stormRain])) > 0; 
 
-      const aqiVal = liveAqi !== null ? Math.round(liveAqi) : null;
+      /* A real sensor always wins; the model only fills the gap. */
+      const aqiSrc = liveAqi !== null ? liveAqi : modelAqi;
+      const pm25Src = liveAqiPm25 !== null ? liveAqiPm25 : modelPm25;
+      const aqiVal = aqiSrc !== null && aqiSrc !== undefined ? Math.round(aqiSrc) : null;
       const aqiBand = aqiVal===null ? '—' : aqiVal<=50?'Good' : aqiVal<=100?'Moderate' : aqiVal<=150?'Unhealthy (Sensitive)' : aqiVal<=200?'Unhealthy' : aqiVal<=300?'Very Unhealthy' : 'Hazardous';
       const aqiPct = aqiVal===null ? 0 : Math.min(aqiVal,500)/500*100;
-      const pm25Val = liveAqiPm25 !== null ? r1(liveAqiPm25) : null;
+      const pm25Val = pm25Src !== null && pm25Src !== undefined ? r1(pm25Src) : null;
       const aqiTrendText = liveAqiTrend ? liveAqiTrend.charAt(0).toUpperCase() + liveAqiTrend.slice(1) : null;
       const aqiNote = aqiTrendText ? `${aqiBand} · ${aqiTrendText}` : aqiBand; 
 
@@ -1330,6 +1411,9 @@
       render();
       labelUnits();
       applyNowcastSetting();
+      watchTheme();
+      refreshModelAir();
+      setInterval(refreshModelAir, 30 * 60 * 1000);
       renderCredit();
       wireDetailOverlay();
       window.addEventListener('resize', render);

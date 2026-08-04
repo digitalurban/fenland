@@ -40,7 +40,7 @@ window.WXCONFIG = {
     wind: "mph"
   },
 
-  /* Small "FENLAND v1.2.0" credit in the page footer, linking to the
+  /* Small "FENLAND v1.3.0" credit in the page footer, linking to the
      project. It is how people find the skin — but set false to remove it. */
   credit: true,
 
@@ -85,6 +85,33 @@ window.WXCONFIG = {
   //   overlay: "radar",
   //   level: "surface"
   // },
+
+  /* ── theme ──────────────────────────────────────────────────────────
+       "auto"   follow the operating system's light/dark setting (default)
+       "sun"    dark between sunset and sunrise at your coordinates
+       "light"  /  "dark"   forced
+
+     The whole design is CSS variables, so a theme is just a second set of
+     them — retheme in css/dashboard.css if you want your own.            */
+  // theme: "auto",
+
+  /* ── air quality ────────────────────────────────────────────────────
+     Where the PM2.5 and AQI tiles and the air-quality chart come from.
+
+       "auto"   your own sensor if one is configured (mqtt.airGradientTopic
+                for live values, station.airQualityBase for history), and
+                Open-Meteo's model where it is not. This is the default.
+       false    no air quality at all
+
+     The Open-Meteo fallback is free and keyless like the other endpoints,
+     but it is a model interpolated to your coordinates — it will not see
+     the bonfire in the next field, and it reads noticeably differently
+     from a sensor on your own mast. A real sensor always wins where one
+     exists. Note also that hourly history only goes back about 90 days,
+     so the year view stays empty on this source.
+
+     Values are US AQI (0-500), matching the coloured bar on the tile.    */
+  // airQuality: "auto",
 
   /* ── hardware label ─────────────────────────────────────────────────
      Shown in the header after the coordinates, e.g. "DAVIS VANTAGE".     */

@@ -261,12 +261,59 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `nowcast` | no | Barometric tendency line. `false` hides it — see below |
 | `maxRainRate` | no | Ignore impossible gauge spikes above this mm/hr. Default 500, `null` disables |
 | `windy` | no | Adds a Windy radar tab. Omit the block and the tab is hidden |
+| `theme` | no | `auto` (OS), `sun`, `light` or `dark`. Default `auto` |
+| `airQuality` | no | `auto` uses your sensor if configured, else Open-Meteo. `false` disables |
 
 Everything is computed internally in metric and converted only for display, so
 thresholds, rankings and confidence ratings stay consistent whichever units you
 pick. Temperature differences (bias, anomaly, spread) convert correctly as
 differences rather than as temperatures — a −1.5 °C bias reads as −2.7 °F, not
 29.3 °F.
+
+### Dark mode
+
+Every colour in the design is a CSS variable, so the dark theme is a second
+set of them rather than a parallel stylesheet. Set `theme` in `config.js`:
+
+```js
+theme: "auto"    // follow the OS · "sun" · "light" · "dark"
+```
+
+`auto` follows the operating system and reacts if it changes while the page is
+open. `sun` goes dark between sunset and sunrise at your coordinates, which is
+what Belchertown does. The initial value is resolved by a small inline script
+in `<head>`, before the stylesheets paint — anything in an external file
+arrives too late and you get a white flash on every load.
+
+The gauges, compass and barograph are SVG drawn with those same variables, so
+they follow without special handling. Highcharts caches its theme, so it is
+re-applied and the visible chart redrawn when the mode changes.
+
+---
+
+### Air quality without a sensor
+
+The dashboard originally took air quality from an AirGradient over MQTT, which
+is fine if you own one and useless otherwise. With no sensor configured, the
+tiles and the history chart now come from
+[Open-Meteo's air-quality API](https://open-meteo.com) — free and keyless like
+the rest.
+
+```js
+airQuality: "auto"   // your sensor if configured, else Open-Meteo · false to disable
+```
+
+Be clear about what the fallback is: a model interpolated to your coordinates.
+It will not see the bonfire in the next field, and it reads differently from a
+sensor on your own mast — testing this at Downham Market, the model gave PM2.5
+of 10 µg/m³ against the AirGradient's 4.8. A real sensor wins where you have
+one, which is why `auto` prefers it.
+
+Two limits worth knowing: hourly history only goes back about 90 days, so the
+year view stays empty on this source; and values are US AQI, matching the
+breakpoints the coloured tile bar is already built around.
+
+---
 
 ### Barometric tendency
 
@@ -393,7 +440,7 @@ Open-Meteo's paid tier.
 
 ## Status and roadmap
 
-Version 1.2.0. Running in production at
+Version 1.3.0. Running in production at
 [digitalurban.github.io/fenland](https://digitalurban.github.io/fenland/), which
 is also the demo — so if the demo is broken, so is the author's weather station.
 

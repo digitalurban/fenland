@@ -15,6 +15,7 @@
       --faint: #e2e8f0;
       --wash: #f8fafc;
       --paper: #ffffff;
+      --page: #f1f5f9;
       --accent: #d97706;
       --accent-light: #fef3c7;
       --highlight: #2563eb;
@@ -22,9 +23,34 @@
       --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
       --sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
     }
+
+/* ── dark theme ─────────────────────────────────────────────────────────
+   Every colour in the design is already a variable, so a theme is just a
+   second set of them. Applied by the data-theme attribute on <html>, which
+   is set before first paint so the page never flashes white.
+
+   The palette is the same slate family inverted rather than pure black:
+   --paper is the card surface, --page the space behind it, --faint the
+   gridlines. Accents are lifted a step because saturated mid-tones lose
+   contrast against a dark ground. */
+:root[data-theme="dark"] {
+  --ink: #e2e8f0;
+  --graphite: #cbd5e1;
+  --slate: #94a3b8;
+  --mist: #64748b;
+  --faint: #334155;
+  --wash: #1e293b;
+  --paper: #0f172a;
+  --page: #020617;
+  --accent: #fbbf24;
+  --accent-light: #78350f;
+  --highlight: #60a5fa;
+  --max-marker: #f87171;
+}
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      background: #f1f5f9;
+      background: var(--page);
       font-family: var(--sans);
       color: var(--ink);
       width: 100%;

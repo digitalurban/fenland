@@ -79,6 +79,35 @@ HTML = '''<!DOCTYPE html>
 <title>Fenland</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<script>
+/* Resolve the theme before the stylesheets paint, otherwise a dark-mode user
+   gets a white flash on every load. Deliberately inline and dependency-free:
+   anything in an external file arrives too late to prevent it.
+     auto  follow the operating system (default)
+     sun   dark between sunset and sunrise, using the configured coordinates
+     light / dark  forced  */
+(function () {
+  try {
+    var c = window.WXCONFIG || {}, t = String(c.theme || "auto").toLowerCase(), dark;
+    if (t === "dark") dark = true;
+    else if (t === "light") dark = false;
+    else if (t === "sun" && c.lat != null && c.lon != null) {
+      /* cheap solar elevation — good to a few minutes, which is all a theme
+         switch needs, and avoids pulling the full sunrise maths in here */
+      var n = new Date(), r = Math.PI / 180,
+          day = Math.floor((n - new Date(n.getFullYear(), 0, 0)) / 864e5),
+          dec = 23.44 * r * Math.sin(2 * Math.PI * (day - 81) / 365),
+          hr = n.getUTCHours() + n.getUTCMinutes() / 60,
+          ha = (hr - 12) * 15 * r + c.lon * r,
+          el = Math.asin(Math.sin(c.lat * r) * Math.sin(dec) +
+                         Math.cos(c.lat * r) * Math.cos(dec) * Math.cos(ha));
+      dark = el < 0;
+    } else dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (dark) document.documentElement.setAttribute("data-theme", "dark");
+  } catch (e) { /* a broken config must never leave the page unstyled */ }
+})();
+</script>
 <link rel="stylesheet" href="css/dashboard.css">
 <link rel="stylesheet" href="css/panels.css">
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
@@ -90,9 +119,9 @@ HTML = '''<!DOCTYPE html>
 
 {overlay}
 
-<script src="config.js"></script>
 <script src="src/units.js"></script>
 <script src="src/colours.js"></script>
+<script src="src/airquality.js"></script>
 <script src="src/dashboard.js"></script>
 <script src="src/ensemble.js"></script>
 <script src="src/forecast.js"></script>
