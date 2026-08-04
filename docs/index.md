@@ -283,6 +283,7 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `theme` | no | `auto` (OS), `sun`, `light` or `dark`. Default `auto` |
 | `themeToggle` | no | Footer button letting visitors override the theme. Default `true` |
 | `airQuality` | no | `auto` uses your sensor if configured, else Open-Meteo. `false` disables |
+| `windScale` | no | Corrects displayed wind towards a 10 m equivalent — see below |
 
 Everything is computed internally in metric and converted only for display, so
 thresholds, rankings and confidence ratings stay consistent whichever units you
