@@ -634,16 +634,19 @@
       document.getElementById('tabBtnStats')?.classList.toggle('active', tab === 'stats');
       document.getElementById('tabBtnEnsemble')?.classList.toggle('active', tab === 'ensemble');
       document.getElementById('tabBtnClimate')?.classList.toggle('active', tab === 'climate');
+      document.getElementById('tabBtnWindy')?.classList.toggle('active', tab === 'windy');
       document.getElementById('paneCharts')?.classList.toggle('active', tab === 'charts');
       document.getElementById('paneForecast')?.classList.toggle('active', tab === 'forecast');
       document.getElementById('paneStats')?.classList.toggle('active', tab === 'stats');
       document.getElementById('paneEnsemble')?.classList.toggle('active', tab === 'ensemble');
       document.getElementById('paneClimate')?.classList.toggle('active', tab === 'climate');
+      document.getElementById('paneWindy')?.classList.toggle('active', tab === 'windy');
       if (tab === 'charts') renderCharts(currentChartSpan);
       else if (tab === 'forecast') { window.__FORECAST2__ ? window.__FORECAST2__.render() : renderForecast();
                                     window.__VERIFY__?.load(); }
       else if (tab === 'ensemble') window.__ENSEMBLE__?.open();
       else if (tab === 'climate') window.__CLIMATE__?.open();
+      else if (tab === 'windy') window.__WINDY__?.open();
       else renderStats();
     } 
 
@@ -660,6 +663,7 @@
       wireOnce('tabBtnStats', () => switchDetailTab('stats'));
       wireOnce('tabBtnEnsemble', () => switchDetailTab('ensemble'));
       wireOnce('tabBtnClimate', () => switchDetailTab('climate'));
+      wireOnce('tabBtnWindy', () => switchDetailTab('windy'));
       document.querySelectorAll('#chartSpanSwitch button').forEach(b => {
         if (!b.dataset.wired) { b.dataset.wired = '1'; b.addEventListener('click', () => switchChartSpan(b.dataset.span)); }
       });

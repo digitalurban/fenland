@@ -59,6 +59,33 @@ window.WXCONFIG = {
      rather than trusting it.                                              */
   // nowcast: true,
 
+  /* ── Windy radar map ────────────────────────────────────────────────
+     Adds a RADAR tab with an embedded Windy map, centred on the lat/lon
+     above and using the units you set. Omit this whole block and the tab
+     does not appear — the frame is only created when the tab is first
+     opened, so if you never add it, nothing ever contacts Windy.
+
+     IMPORTANT — overlay: "radar" is a composite of national radar networks.
+     Coverage is good over Europe, North America, Japan and Australia, and
+     absent over much of the rest of the world and the open ocean. If you
+     are outside coverage the map will look empty and you will assume it is
+     broken. Use overlay: "rain" there — Windy's modelled precipitation,
+     which is global but forecast rather than observed.
+
+       zoom     1 (world) to ~14 (street). 8 is roughly a county.
+       overlay  "radar" | "rain" | "wind" | "temp" | "clouds" | "gust"
+       level    "surface", or a pressure level such as "850h"
+       embed    paste your own iframe markup to override all of the above,
+                including using a different provider entirely
+
+     Windy's embed is free for personal use; check their terms if your site
+     is commercial.                                                        */
+  // windy: {
+  //   zoom: 8,
+  //   overlay: "radar",
+  //   level: "surface"
+  // },
+
   /* ── hardware label ─────────────────────────────────────────────────
      Shown in the header after the coordinates, e.g. "DAVIS VANTAGE".     */
   hardware: "DAVIS VANTAGE",

@@ -239,3 +239,23 @@
 .fc-stack > *,
 .ens-stack > *,
 .kpis > * { min-width: 0; }
+
+/* ── Windy map pane ─────────────────────────────────────────────────────
+   Sized by aspect ratio rather than fixed pixels, so it fills the pane on a
+   desktop and stays usable on a phone. Belchertown's pasted iframe is a
+   fixed 650x360, which is why it letterboxes on wide screens. */
+.windy-wrap {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  min-height: 320px;
+  border: 1px solid var(--faint);
+  background: var(--wash);
+  overflow: hidden;
+}
+.windy-wrap iframe { width: 100%; height: 100%; border: 0; display: block; }
+@media (max-width: 1023px) {
+  .windy-wrap { aspect-ratio: 4 / 3; min-height: 280px; }
+}
+@media (max-width: 560px) {
+  .windy-wrap { aspect-ratio: 1 / 1; min-height: 260px; }
+}

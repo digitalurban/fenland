@@ -97,6 +97,7 @@
         <button class="detail-tab" id="tabBtnEnsemble">ENSEMBLE</button>
         <button class="detail-tab" id="tabBtnStats">STATS</button>
         <button class="detail-tab" id="tabBtnClimate">CLIMATE</button>
+        <button class="detail-tab" id="tabBtnWindy">RADAR</button>
       </div>
       <div class="detail-close" id="detailCloseBtn">✕ CLOSE</div>
     </div> 
@@ -275,6 +276,20 @@
         BUT IT IS CONSISTENT ACROSS EVERY YEAR OF RECORD, WHICH IS WHAT MAKES THE COMPARISON MEANINGFUL.
       </div>
     </div>
+
+    <div class="detail-pane" id="paneWindy">
+      <div class="cl-statusbar">
+        <div class="cl-status" id="windyStatus">Rainfall radar, centred on your station.</div>
+      </div>
+      <div class="windy-wrap" id="windyFrame">
+        <div class="chart-loading">Map will load when this tab is opened.</div>
+      </div>
+      <div class="cl-note">
+        SOURCE — WINDY.COM EMBEDDED MAP · CENTRED ON THE COORDINATES IN CONFIG.JS<br>
+        RADAR IS A COMPOSITE OF NATIONAL NETWORKS AND DOES NOT COVER EVERY REGION.
+        WHERE THERE IS NO COVERAGE, SET <code>overlay: "rain"</code> FOR MODELLED PRECIPITATION INSTEAD.
+      </div>
+    </div>
   </div>
 
 <script src="config.js?v=1.1.0"></script>
@@ -287,5 +302,6 @@
 <script src="src/verify-panel.js?v=1.1.0"></script>
 <script src="src/windrose.js?v=1.1.0"></script>
 <script src="src/solar.js?v=1.1.0"></script>
+<script src="src/windy.js?v=1.1.0"></script>
 </body>
 </html>

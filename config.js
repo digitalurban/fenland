@@ -15,6 +15,12 @@ window.WXCONFIG = {
   lon: 0.3822,
   timezone: "Europe/London",
   elevation: 15,
+  windy: {
+    zoom: 8,
+    overlay: "radar",
+    level: "surface"
+  },
+
   hardware: "DAVIS VANTAGE",
 
   units: { wind: "mph" },

@@ -230,6 +230,7 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `climate.firstYear` | no | Start of the record. Default 1940, the ERA5 limit |
 | `nowcast` | no | Barometric tendency line. `false` hides it — see below |
 | `maxRainRate` | no | Ignore impossible gauge spikes above this mm/hr. Default 500, `null` disables |
+| `windy` | no | Adds a Windy radar tab. Omit the block and the tab is hidden |
 
 Everything is computed internally in metric and converted only for display, so
 thresholds, rankings and confidence ratings stay consistent whichever units you
@@ -256,6 +257,34 @@ hemisphere.
 The panel explains this on hover. If your climate isn't temperate maritime,
 `nowcast: false` removes it rather than leaving you a plausible-looking
 sentence that doesn't apply where you are.
+
+---
+
+### Radar
+
+
+An embedded Windy map, centred on your coordinates and using your units, so
+it agrees with the rest of the page rather than contradicting it. Belchertown
+does this by having you paste an iframe into `radar_html`, which works but
+hardcodes the location, size and units — move the station or switch to
+Fahrenheit and you regenerate it by hand. Here it's derived from `config.js`.
+
+```js
+windy: { zoom: 8, overlay: "radar", level: "surface" }
+```
+
+Omit the block and the tab doesn't appear. The frame is built only when the
+tab is first opened, so if you never open it nothing contacts Windy — this is
+the one place Fenland talks to a third-party service rather than a CDN.
+
+**`overlay: "radar"` is regional.** It's a composite of national radar
+networks: good over Europe, North America, Japan and Australia, empty over
+much of the rest of the world. Outside coverage the map looks broken when it
+isn't. Use `overlay: "rain"` there — modelled precipitation, global but
+forecast rather than observed.
+
+`embed:` takes raw iframe markup if you'd rather configure Windy yourself, or
+use another provider entirely.
 
 ---
 

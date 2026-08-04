@@ -45,7 +45,8 @@ overlay = insert_after(overlay,
     '\n        <button class="detail-tab" id="tabBtnEnsemble">ENSEMBLE</button>', "FORECAST tab")
 overlay = insert_after(overlay,
     '<button class="detail-tab" id="tabBtnStats">STATS</button>',
-    '\n        <button class="detail-tab" id="tabBtnClimate">CLIMATE</button>', "STATS tab")
+    '\n        <button class="detail-tab" id="tabBtnClimate">CLIMATE</button>'
+    '\n        <button class="detail-tab" id="tabBtnWindy">RADAR</button>', "STATS tab")
 
 overlay = insert_after(overlay,
     '<div class="forecast-daily" id="forecastDaily"></div>',
@@ -66,7 +67,7 @@ overlay = overlay[:m.end()] + "\n        " + pane("windrose").strip() + \
 m = re.search(r'<div class="detail-pane" id="paneStats">.*?\n    </div>\n', overlay, re.S)
 if not m:
     die("could not locate the #paneStats block")
-overlay = overlay[:m.end()] + "\n" + pane("ensemble") + "\n\n" + pane("climate") + "\n" + overlay[m.end():]
+overlay = overlay[:m.end()] + "\n" + pane("ensemble") + "\n\n" + pane("climate") + "\n\n" + pane("windy") + "\n" + overlay[m.end():]
 
 HTML = '''<!DOCTYPE html>
 <html lang="en">
@@ -99,6 +100,7 @@ HTML = '''<!DOCTYPE html>
 <script src="src/verify-panel.js"></script>
 <script src="src/windrose.js"></script>
 <script src="src/solar.js"></script>
+<script src="src/windy.js"></script>
 </body>
 </html>
 '''.replace("{dashboard}", pane("dashboard")).replace("{overlay}", overlay)
@@ -133,7 +135,8 @@ open(out, "w", encoding="utf-8").write(HTML)
 ids = re.findall(r'id="(chart\w+|pane\w+|tabBtn\w+|footCredit)"', HTML)
 need = ["chartTemp", "chartWind", "chartRain", "chartBaro", "chartAirQuality", "chartRose", "chartSolar",
         "paneCharts", "paneForecast", "paneStats", "paneEnsemble", "paneClimate",
-        "tabBtnCharts", "tabBtnForecast", "tabBtnEnsemble", "tabBtnStats", "tabBtnClimate", "footCredit"]
+        "tabBtnCharts", "tabBtnForecast", "tabBtnEnsemble", "tabBtnStats", "tabBtnClimate",
+        "tabBtnWindy", "paneWindy", "footCredit"]
 missing = [n for n in need if n not in ids]
 if missing:
     die("built file is missing: " + ", ".join(missing))
