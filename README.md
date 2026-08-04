@@ -1,9 +1,8 @@
 # Fenland
 
 Forecast, ensemble and climate panels for [weeWX](https://weewx.com), with a
-live dashboard — built to sit alongside the
-[Belchertown skin](https://github.com/poblabs/weewx-belchertown), not to
-replace it.
+live dashboard — built to sit alongside
+[Belchertown skin](https://github.com/poblabs/weewx-belchertown)
 
 **[Live demo](https://digitalurban.github.io/fenland/)** ·
 [Install](#install) · [Configuration](#configuration) · [weeWX notes](weewx/README.md)
@@ -12,21 +11,8 @@ replace it.
 
 Belchertown already does the hard part, and does it well: driving weeWX and
 publishing the history and statistics. Fenland reads that output for its
-History and Stats tabs rather than reinventing it, and spends its effort on the
-side weeWX skins usually leave out — where the models disagree, how confident
-to be, how unusual today is against the long record, and how your own station's
+History and Stats tabs rather than reinventing it. It adds a new front end and a new view of forecasts, data agaisnt climate norms and where the models disagree, how confident to be, how unusual today is against the long record, and how your own station's
 forecasts have actually scored.
-
-It degrades cleanly, so you can start anywhere:
-
-| You have | You get |
-|---|---|
-| Just coordinates | Forecast, ensemble, climate and radar |
-| A station feed (MQTT or JSON) | …and the live dashboard |
-| Belchertown's chart JSON | …and history and stats |
-
-Nothing here is a data logger. weeWX talks to the hardware; Fenland only
-displays what comes out of it.
 
 ---
 
