@@ -334,24 +334,21 @@
 
       .wind { grid-area: wind; min-height: 0; border-top: 2px solid var(--faint); padding-top: calc(20 * var(--k)); border-right: 2px solid var(--faint); padding-right: calc(28 * var(--k)); display: flex; flex-direction: column; justify-content: center; gap: calc(20 * var(--k)); }
       .wind-dials { display: flex; flex: 1 1 auto; min-height: 0; gap: calc(20 * var(--k)); justify-content: center; align-items: center; width: 100%; }
-      /* Size the dials from the HEIGHT available, not the width.
-         Previously max-height capped this box while the svg inside took its
-         height from its width — so the face grew straight out of the bottom
-         of the box, overhanging the readouts by ~45px. Any padding added
-         below simply squeezed this row and made the overhang worse, which is
-         why the gap never moved. Anchoring to height and letting width follow
-         the aspect ratio means the dials always fit, and the space below them
-         is then real. */
+      /* Sized from the width of the row, as originally designed. The face is
+         deliberately allowed to run past the height its flex row allots it —
+         that overhang is what keeps the dials large, and it is why the space
+         below them cannot be increased by padding alone. Height-fitting them
+         instead makes the dials noticeably smaller, which is a worse trade. */
       .compass {
-        flex: 0 1 auto;
-        height: 100%;
+        flex: 1 1 0;                          /* share the row equally */
         width: auto;
+        max-width: calc(400 * var(--k));      /* never beyond design size */
         min-width: 0;
         aspect-ratio: 1 / 1;
-        max-height: calc(400 * var(--k));     /* never beyond design size */
-        max-width: calc(400 * var(--k));
+        max-height: 100%;
+        height: auto;
       }
-      .compass svg { width: 100%; height: 100%; display: block; }
+      .compass svg { width: 100%; height: auto; display: block; }
       /* No rule above the readouts. The dials are sized by aspect ratio and
          can grow past the space the flex row allots them, so a border here
          gets drawn straight through the bottom of both faces. The columns
