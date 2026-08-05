@@ -111,8 +111,18 @@
     .wind-zoom-overlay .wind-data-cell .val { font-size: clamp(26px, 7vw, 42px); }
     .wind-zoom-overlay .wind-data-cell .val .u { font-size: clamp(12px, 3.2vw, 19px); }
     .wind-zoom-overlay .wind-data-cell .sub-txt { font-size: clamp(12px, 3.2vw, 19px); margin-top: 4px; }
+    .wind-zoom-overlay .wind-beaufort { font-size: clamp(12px, 3.2vw, 19px); margin-top: clamp(6px, 1.5vh, 12px); }
     .wind-zoom-overlay .wind-zoom-hint { font-family: var(--mono); font-size: 13px; letter-spacing: .15em; text-transform: uppercase; color: var(--slate); flex-shrink: 0; }
-    .wind-readout-row { display: flex; border-top: 1px solid var(--faint); padding-top: 12px; }
+    .wind-readout-row { display: flex; border-top: 1px solid var(--faint); padding-top: 12px; margin-top: 14px; }
+    /* The Beaufort description belongs to the wind as a whole, not to the
+       speed column. Sitting inside that cell it was left-aligned under one
+       of three, and — worse — its length changes with the wind ("Calm" to
+       "Moderate breeze"), so the cell grew and shrank and the whole row
+       shifted. On its own centred line it describes all three and cannot
+       move anything else. */
+    .wind-beaufort { text-align: center; font-family: var(--sans); font-weight: 600;
+                     font-size: 12px; color: var(--graphite); margin-top: 6px;
+                     min-height: 1.3em; }
     .wind-data-cell { flex: 1; text-align: center; min-width: 0; }
       /* "NNW 329°" is the widest thing in this row and was wrapping onto a
          second line. Give the direction cell more of the row, stop it
@@ -317,7 +327,14 @@
         height: auto;
       }
       .compass svg { width: 100%; height: auto; display: block; }
-      .wind-readout-row { flex: 0 0 auto; border-top: 1.5px solid var(--wash); padding-top: calc(16 * var(--k)); display: flex; gap: calc(24 * var(--k)); width: 100%; }
+      /* The divider sat almost against the dials. The section already has a
+         20k gap between children, so lift the rule with padding rather than
+         margin — this canvas is fixed height with overflow hidden, and every
+         pixel added here is one taken from the dials. */
+      .wind-readout-row { flex: 0 0 auto; border-top: 1.5px solid var(--faint); padding-top: calc(24 * var(--k)); display: flex; gap: calc(24 * var(--k)); width: 100%; }
+      .wind-beaufort { flex: 0 0 auto; text-align: center; font-size: calc(19 * var(--k));
+                       margin-top: 0; font-weight: 600; color: var(--graphite);
+                       min-height: calc(26 * var(--k)); }
       .wind-data-cell { flex: 1; text-align: center; min-width: 0; }
       /* "NNW 329°" is the widest thing in this row and was wrapping onto a
          second line. Give the direction cell more of the row, stop it
