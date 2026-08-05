@@ -76,6 +76,12 @@ HTML = '''<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Revalidate the HTML on every load. The ?v= stamps below keep the CSS and
+     JS cached until the version changes, which is what you want — but those
+     stamps live in THIS file, so a cached copy of it keeps asking for the old
+     versions and the whole mechanism is defeated. One small conditional
+     request per load fixes that; the assets themselves stay cached. -->
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <title>Fenland</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">

@@ -5,10 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Revalidate the HTML on every load. The ?v= stamps below keep the CSS and
+     JS cached until the version changes, which is what you want — but those
+     stamps live in THIS file, so a cached copy of it keeps asking for the old
+     versions and the whole mechanism is defeated. One small conditional
+     request per load fixes that; the assets themselves stay cached. -->
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <title>Fenland</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=1.9.0"></script>
+<script src="config.js?v=1.9.1"></script>
 <script>
 /* Resolve the theme before the stylesheets paint, otherwise a dark-mode user
    gets a white flash on every load. Deliberately inline and dependency-free:
@@ -42,8 +48,8 @@
   } catch (e) { /* a broken config must never leave the page unstyled */ }
 })();
 </script>
-<link rel="stylesheet" href="css/dashboard.css?v=1.9.0">
-<link rel="stylesheet" href="css/panels.css?v=1.9.0">
+<link rel="stylesheet" href="css/dashboard.css?v=1.9.1">
+<link rel="stylesheet" href="css/panels.css?v=1.9.1">
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
 </head>
 <body>
@@ -328,16 +334,16 @@
     </div>
   </div>
 
-<script src="src/units.js?v=1.9.0"></script>
-<script src="src/colours.js?v=1.9.0"></script>
-<script src="src/airquality.js?v=1.9.0"></script>
-<script src="src/dashboard.js?v=1.9.0"></script>
-<script src="src/ensemble.js?v=1.9.0"></script>
-<script src="src/forecast.js?v=1.9.0"></script>
-<script src="src/climate.js?v=1.9.0"></script>
-<script src="src/verify-panel.js?v=1.9.0"></script>
-<script src="src/windrose.js?v=1.9.0"></script>
-<script src="src/solar.js?v=1.9.0"></script>
-<script src="src/windy.js?v=1.9.0"></script>
+<script src="src/units.js?v=1.9.1"></script>
+<script src="src/colours.js?v=1.9.1"></script>
+<script src="src/airquality.js?v=1.9.1"></script>
+<script src="src/dashboard.js?v=1.9.1"></script>
+<script src="src/ensemble.js?v=1.9.1"></script>
+<script src="src/forecast.js?v=1.9.1"></script>
+<script src="src/climate.js?v=1.9.1"></script>
+<script src="src/verify-panel.js?v=1.9.1"></script>
+<script src="src/windrose.js?v=1.9.1"></script>
+<script src="src/solar.js?v=1.9.1"></script>
+<script src="src/windy.js?v=1.9.1"></script>
 </body>
 </html>
