@@ -58,7 +58,15 @@
     } 
 
     /* ── MOBILE DEFAULT RESPONSIVE FLEX VIEW ── */
-    .mobile-container { display: flex; flex-direction: column; gap: 32px; padding: 24px 16px; background: var(--paper); width: 100%; }
+    /* Added to the iOS home screen the page runs standalone with a
+       translucent status bar, which is what makes it full-bleed — but it also
+       means the clock and station name sit underneath it. Reserve the safe
+       area at the top, and the home-indicator strip at the bottom. Falls back
+       to the plain padding anywhere env() resolves to zero. */
+    .mobile-container { display: flex; flex-direction: column; gap: 32px;
+      padding: max(24px, calc(env(safe-area-inset-top) + 10px)) max(16px, env(safe-area-inset-right))
+               max(24px, calc(env(safe-area-inset-bottom) + 10px)) max(16px, env(safe-area-inset-left));
+      background: var(--paper); width: 100%; }
     .desktop-only-scaler { display: none; }
     .head { display: flex; flex-direction: column; gap: 8px; border-bottom: 2px solid var(--ink); padding-bottom: 16px; }
     .brand .name { font-family: var(--mono); font-weight: 700; font-size: 26px; letter-spacing: .15em; text-transform: uppercase; }
@@ -239,18 +247,27 @@
     @media (min-width: 1024px) {
       /* one design pixel, sized so 1404 of them fit the window height */
       :root {
-        --k: clamp(0.40px, min(calc(100dvw / 1960), calc(100dvh / 1404)), 1.15px);
+        /* The height available is the viewport less anything the device
+           reserves — the status bar on an iPad added to the home screen, the
+           home indicator at the foot. Sizing --k from the full 100dvh would
+           put the frame's top edge under the status bar. */
+        --safe-v: calc(env(safe-area-inset-top) + env(safe-area-inset-bottom));
+        --k: clamp(0.40px, min(calc(100dvw / 1960), calc((100dvh - var(--safe-v)) / 1404)), 1.15px);
       }
 
       html, body { width: 100%; height: 100%; overflow: hidden; display: block; }
       body { background: var(--wash); }
       .mobile-container { display: none; }
 
-      /* centres the frame in the window, both axes */
+      /* centres the frame in the window, both axes — inside the safe area, so
+         the frame's top rule clears the status bar in standalone mode */
       .desktop-only-scaler {
         display: flex;
         align-items: center;
         justify-content: center;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
         width: 100%;
         height: 100dvh;
         transform: none !important;    /* the JS scaler is retired */
