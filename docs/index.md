@@ -371,7 +371,14 @@ sentence that doesn't apply where you are.
 
 ### Live data
 
-Two ways, and you can set both:
+**Any station weeWX supports will work.** Fenland never talks to hardware — it
+reads the loop packet by field name, and weeWX normalises every driver into the
+same schema, so a Davis, an Ecowitt, a Tempest, a Fine Offset and an Acurite
+all arrive looking identical. What varies is units, field names if you have
+overridden any, and which sensors exist at all; the three settings below cover
+the first two, and a missing sensor simply leaves its tile blank.
+
+Two ways to get the data in, and you can set both:
 
 **MQTT** gives genuinely live updates. Your broker needs to allow anonymous
 subscribe over `wss://` — no credentials are used, and none should be, since
@@ -602,11 +609,13 @@ is also the demo — so if the demo is broken, so is the author's weather statio
 - **Only Fahrenheit-style US units are handled on input.** `stationUnits`
   covers °F, inHg, inches, cm, kPa and the four wind units. Anything more exotic
   needs converting before it reaches the page.
+- **It has only been run against one setup.** Not a hardware limitation —
+  Fenland never talks to a station, it reads the loop fields weeWX publishes,
+  and weeWX normalises every driver into the same schema. But one installation
+  is one installation, and the rough edges will be in the variety.
 
 **On the list:**
 
-- Air quality from Open-Meteo's air-quality API, so the panel works without an
-  AirGradient or any other sensor
 - A health panel flagging stale or zero-byte JSON files before they show up as
   a blank chart. Written after exactly that happened
 - Cumulative rainfall for the year on the history tab, which needs `chart3`
