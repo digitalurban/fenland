@@ -23,7 +23,7 @@
   /* Bump on release. Shown in the footer credit and worth quoting in any
      bug report — "which version are you on" is the first question. */
   const FENLAND = {
-    version: "1.9.2",
+    version: "1.9.3",
     url: "https://github.com/digitalurban/fenland"
   };
 
