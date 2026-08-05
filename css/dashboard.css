@@ -348,7 +348,7 @@
          can grow past the space the flex row allots them, so a border here
          gets drawn straight through the bottom of both faces. The columns
          are legible without it, and the gap alone separates them. */
-      .wind-readout-row { flex: 0 0 auto; border-top: 0; padding-top: calc(10 * var(--k)); display: flex; gap: calc(24 * var(--k)); width: 100%; }
+      .wind-readout-row { flex: 0 0 auto; border-top: 0; padding-top: calc(22 * var(--k)); display: flex; gap: calc(24 * var(--k)); width: 100%; }
       .wind-beaufort { flex: 0 0 auto; text-align: center; font-size: calc(19 * var(--k));
                        margin-top: 0; font-weight: 600; color: var(--graphite);
                        min-height: calc(26 * var(--k)); }
