@@ -344,11 +344,11 @@
         height: auto;
       }
       .compass svg { width: 100%; height: auto; display: block; }
-      /* The divider sat almost against the dials. The section already has a
-         20k gap between children, so lift the rule with padding rather than
-         margin — this canvas is fixed height with overflow hidden, and every
-         pixel added here is one taken from the dials. */
-      .wind-readout-row { flex: 0 0 auto; border-top: 1.5px solid var(--faint); padding-top: calc(24 * var(--k)); display: flex; gap: calc(24 * var(--k)); width: 100%; }
+      /* No rule above the readouts. The dials are sized by aspect ratio and
+         can grow past the space the flex row allots them, so a border here
+         gets drawn straight through the bottom of both faces. The columns
+         are legible without it, and the gap alone separates them. */
+      .wind-readout-row { flex: 0 0 auto; border-top: 0; padding-top: calc(10 * var(--k)); display: flex; gap: calc(24 * var(--k)); width: 100%; }
       .wind-beaufort { flex: 0 0 auto; text-align: center; font-size: calc(19 * var(--k));
                        margin-top: 0; font-weight: 600; color: var(--graphite);
                        min-height: calc(26 * var(--k)); }
