@@ -23,7 +23,7 @@
   /* Bump on release. Shown in the footer credit and worth quoting in any
      bug report — "which version are you on" is the first question. */
   const FENLAND = {
-    version: "1.9.4",
+    version: "1.9.5",
     url: "https://github.com/digitalurban/fenland"
   };
 
@@ -1346,10 +1346,16 @@
       c.on('error', () => { mqttStatus = 'offline'; });
       c.on('message', (t, buf) => {
         const valStr = buf.toString().trim();
-        if(t === TOPIC_WIND_MAX) { dayWindMax = parseFloat(valStr) || 0; }
+        /* These arrive on their own topics rather than in the loop packet, so
+           they have to be put through the same conversions by hand. Missing
+           that left the day-max marker in raw station units while the needle
+           beside it was converted and scaled — so the needle could sail past
+           its own maximum. The temperature pair had the same gap: harmless on
+           a metric station, wrong on one publishing °F. */
+        if(t === TOPIC_WIND_MAX) { dayWindMax = inWind(parseFloat(valStr)) || 0; }
         else if(t === TOPIC_WIND_DIR10) { const v = parseFloat(valStr); if (!isNaN(v)) windGustDir10 = v; }
-        else if(t === TOPIC_TEMP_MIN) { liveTempMin = !isNaN(parseFloat(valStr)) ? Math.round(parseFloat(valStr) * 10) / 10 : valStr; }
-        else if(t === TOPIC_TEMP_MAX) { liveTempMax = !isNaN(parseFloat(valStr)) ? Math.round(parseFloat(valStr) * 10) / 10 : valStr; }
+        else if(t === TOPIC_TEMP_MIN) { const v = parseFloat(valStr); liveTempMin = !isNaN(v) ? Math.round(inTemp2C(v) * 10) / 10 : valStr; }
+        else if(t === TOPIC_TEMP_MAX) { const v = parseFloat(valStr); liveTempMax = !isNaN(v) ? Math.round(inTemp2C(v) * 10) / 10 : valStr; }
         else if(t === TOPIC_AIRGRADIENT) { 
           try { 
             const agData = JSON.parse(valStr); 
