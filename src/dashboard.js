@@ -23,7 +23,7 @@
   /* Bump on release. Shown in the footer credit and worth quoting in any
      bug report — "which version are you on" is the first question. */
   const FENLAND = {
-    version: "1.9.5",
+    version: "1.9.6",
     url: "https://github.com/digitalurban/fenland"
   };
 
@@ -145,6 +145,13 @@
     const to = MPH_TO_WIND[String((CFG.units && CFG.units.wind) || "mph").toLowerCase()] || 1;
     return v * from * to * WIND_SCALE;
   };
+
+  /* Anything outside this file that reads station wind needs the same
+     treatment — the wind rose, for one. Three separate places have now been
+     found showing unconverted or unscaled wind because they read it by
+     another route, so expose the one conversion rather than let a fourth
+     reimplement it. */
+  window.__FENLAND_WIND__ = { toDisplay: inWind, scale: WIND_SCALE };
 
   /* ── loop packet field names ──────────────────────────────────────────
      The keys Fenland looks for in the MQTT payload (or the polled JSON). The
@@ -721,7 +728,9 @@
         /* U.w labels but does not convert — it expects a value already in the
            display unit — so go via mph and land in the right one. */
         const disp = String((CFG.units && CFG.units.wind) || 'mph').toLowerCase();
-        return U.w(v * toMph * (MPH_TO_WIND[disp] || 1));
+        /* WIND_SCALE too, or the Stats tab reads lower than the dashboard
+           beside it and the footer's "×1.21 to 10 m" becomes a half-truth. */
+        return U.w(v * toMph * (MPH_TO_WIND[disp] || 1) * WIND_SCALE);
       }
       /* humidity, UV, anything unitless or unrecognised — pass through */
       return `${v.toFixed(1)}${raw}`;

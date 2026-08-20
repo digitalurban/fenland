@@ -48,8 +48,14 @@
     const spd = seriesData(c2, "windSpeed") || seriesData(c2, "windGust");
     if (!spd) return null;
     const usedGust = !seriesData(c2, "windSpeed");
+    /* These come straight from Belchertown's chart JSON, in whatever units
+       weeWX publishes and with no height correction. Put them through the
+       same conversion the dashboard uses, so the rose's speed bands mean the
+       same thing as every other wind figure on the page. */
+    const conv = (window.__FENLAND_WIND__ && window.__FENLAND_WIND__.toDisplay)
+                 || (v => v);
     const byT = new Map();
-    spd.forEach(p => { if (p && p[1] != null) byT.set(p[0], p[1]); });
+    spd.forEach(p => { if (p && p[1] != null) byT.set(p[0], conv(p[1])); });
     const out = [];
     dir.forEach(p => {
       if (!p || p[1] == null) return;
