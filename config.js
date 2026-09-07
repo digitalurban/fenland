@@ -31,7 +31,7 @@ window.WXCONFIG = {
      wind at this site, and scaling it away would make the numbers agree with
      a model rather than with reality. Display only; the weeWX archive still
      holds what the instrument actually measured. */
-  windScale: 1.21,
+  windScale: 0.0,
 
   /* ── live data over MQTT ────────────────────────────────────────────
      Anonymous read over websockets — no credentials used or wanted.     */
