@@ -381,6 +381,56 @@
       .foot { grid-area: foot; border-top: 2px solid var(--ink); padding-top: calc(18 * var(--k)); flex-direction: row; justify-content: space-between; align-items: center; gap: 0; }
       .foot span { font-family: var(--mono); font-size: calc(16 * var(--k)); color: var(--slate); letter-spacing: .10em; }
     }
+/* ───────────────────────────────────────────────────────────────
+   Fenland — wind panel overlap fix
+   Append to css/dashboard.css (after the existing @media 1024px
+   block), or replace the matching rules inside it.
+
+   Cause: .compass is sized from the ROW WIDTH via aspect-ratio
+   with flex:1 1 0, so each face can be taller than the height
+   .wind-dials allots it. The face overhangs, and the readout row
+   (WIND SPEED / DIRECTION / GUST PROFILE) is painted underneath it.
+   padding-top cannot fix it — the overhang is outside the flow box.
+
+   Fix: fit the faces to the available HEIGHT (width follows from
+   aspect-ratio, capped at the 400px design size), so nothing
+   overflows. That costs ~8% dial diameter at 4:3, which is bought
+   back by trimming the readout padding and the column gaps.
+   ─────────────────────────────────────────────────────────────── */
+
+@media (min-width: 1024px) {
+
+  /* give the dials every pixel the row has, and clip nothing */
+  .wind-dials {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  /* height-fit instead of width-fit */
+  .compass {
+    flex: 0 1 auto;
+    height: 100%;
+    width: auto;
+    max-width: calc(400 * var(--k));
+    max-height: calc(400 * var(--k));
+    min-width: 0;
+    aspect-ratio: 1 / 1;
+  }
+  .compass svg { width: 100%; height: 100%; display: block; }
+
+  /* space bought back: the faces no longer need clearance */
+  .wind-readout-row { padding-top: calc(22 * var(--k)); }
+  .wind { gap: calc(14 * var(--k)); }
+}
+
+/* the tap-to-enlarge overlay still sizes by width (it has no
+   bounded height), so opt it out of the height fit */
+.wind-zoom-overlay .compass {
+  height: auto !important;
+  max-height: none !important;
+  flex: 0 0 auto !important;
+}
 
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -400,3 +450,5 @@
   .uvbar .mark { top: -6px; border-left-width: 7px; border-right-width: 7px; border-top-width: 10px; transform: translateX(-7px); }
   .uvbar .seg { width: 1.5px; }
 }
+
+
