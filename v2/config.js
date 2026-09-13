@@ -50,6 +50,19 @@ window.WXCONFIG = {
     lightningDistanceTopic: "personal/ucfnaps/homeassistant/sensor/blitzortung_lightning_distance/state"
   },
 
+  /* ── wind panel layout ──────────────────────────────────────────────
+     Which wind graphic the desktop dashboard uses.
+
+       "bars"   the Beaufort tower down the left edge and the direction
+                tape across the foot, with the tile panel under the hero
+                and the air temperature trace under the barograph
+       "dials"  the original round speed dial and compass rose in their
+                own cell, exactly as v1 drew them
+
+     Phones stack the same two graphics either way — there is no room for
+     a full-height tower on a handset.                                    */
+  windPanel: "bars",
+
   pollSeconds: 20,
 
   /* ── station data files ─────────────────────────────────────────────
