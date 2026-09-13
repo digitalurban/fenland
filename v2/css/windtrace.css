@@ -187,9 +187,17 @@
      layout had, and .baro-chart's min-height was tall enough to push the
      tendency forecast out of the cell and across the heading below it. The
      chart is the elastic part of that column, so let it shrink instead. */
+  /* Five rows leave the pressure column less floor than the four-row dial
+     layout had, so nothing in it may claim a fixed height. The heading,
+     reading and forecast take what they need and the chart takes the rest:
+     a min-height on the chart instead pushed the forecast out of the cell,
+     and did so at some widths and not others, because the reading wraps to
+     two lines once --k hits its floor. */
   .baro { overflow: hidden; }
-  .baro-chart { min-height: calc(150 * var(--k)); }
+  .baro-chart { flex: 1 1 auto; min-height: 0; }
   .nowcast { flex: 0 0 auto; margin-top: calc(12 * var(--k)); }
+  /* and keep the reading on one line for as long as it will fit */
+  .baro-read { flex-wrap: nowrap; white-space: nowrap; }
 
   /* air temperature, under the barograph */
   .temp-trend {
