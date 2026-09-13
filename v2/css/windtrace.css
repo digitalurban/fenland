@@ -57,6 +57,21 @@
    pixels whatever the box measures — so the box's height alone decides
    whether the tower reads as a tower or as a square block. */
 .wt-block-gauge .wt-box { height: 460px; }
+
+/* The temperature block this file's script inserts into the phone column.
+   dashboard.css hides .temp-trend by default because the desktop markup
+   carries one too, and that copy must stay hidden on a phone. */
+.temp-trend-mob {
+  display: flex !important;
+  flex-direction: column;
+  margin-top: 22px;
+}
+.temp-trend-mob .temp-chart {
+  height: 260px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+}
+.temp-trend-mob .temp-chart svg { display: block; width: 100%; height: 100%; }
 .wt-block-tape .wt-box { height: 66px; }
 
 /* the zoom overlay simply gets bigger boxes */

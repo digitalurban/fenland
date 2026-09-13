@@ -96,10 +96,39 @@
            stops + '</linearGradient></defs>';
   }
 
-  function svgEl() { return document.getElementById("tempSvg"); }
+  /* Two possible homes: the desktop grid's own cell, and a block this file
+     inserts into the phone column. dashboard.js generates that column from a
+     template with no temperature section in it, and regenerates it whenever
+     #speedSvg_mob goes missing, so the block is re-mounted on a tick rather
+     than once. A box of no width is one that is display:none — the desktop
+     cell on a phone, and vice versa — so it is skipped. */
+  function svgEls() {
+    var out = [], ids = ["tempSvg", "tempSvg_mob"], i, el;
+    for (i = 0; i < ids.length; i++) {
+      el = document.getElementById(ids[i]);
+      if (el && el.parentNode && el.parentNode.clientWidth > 20) out.push(el);
+    }
+    return out;
+  }
 
-  function message(txt) {
-    var svg = svgEl(); if (!svg) return;
+  function mountMobile() {
+    var col = document.getElementById("mobileLayout");
+    if (!col || !col.children.length) return false;
+    if (document.getElementById("tempSvg_mob")) return false;
+    var baro = col.querySelector("section.baro");
+    if (!baro) return false;
+    var sec = document.createElement("section");
+    sec.className = "temp-trend temp-trend-mob";
+    sec.innerHTML = '<div class="eyebrow">Air temperature · ' +
+      '<span id="tempTrendUnit_mob">24 hours</span></div>' +
+      '<div class="temp-chart"><svg id="tempSvg_mob"></svg></div>';
+    baro.parentNode.insertBefore(sec, baro.nextSibling);
+    return true;
+  }
+
+  function message(txt) { svgEls().forEach(function (el) { messageInto(el, txt); }); }
+
+  function messageInto(svg, txt) {
     var box = svg.parentNode, w = box.clientWidth || 600, h = box.clientHeight || 300;
     svg.setAttribute("viewBox", "0 0 " + w + " " + h);
     var mu = Math.max(0.55, Math.min(1.25, w / 750));
@@ -109,11 +138,19 @@
   }
 
   function draw() {
-    var svg = svgEl(); if (!svg) return;
+    svgEls().forEach(drawInto);
+    var u = unit() + " · 24 hours";
+    ["tempTrendUnit", "tempTrendUnit_mob"].forEach(function (id) {
+      var hd = document.getElementById(id);
+      if (hd) hd.textContent = u;
+    });
+  }
+
+  function drawInto(svg) {
     var box = svg.parentNode;
     var w = box.clientWidth, h = box.clientHeight;
     if (!w || !h) return;
-    if (!series.length) { message("AWAITING TEMPERATURE HISTORY"); return; }
+    if (!series.length) { messageInto(svg, "AWAITING TEMPERATURE HISTORY"); return; }
 
     svg.setAttribute("viewBox", "0 0 " + w + " " + h);
 
@@ -172,14 +209,18 @@
     var gradId = "tempBands";
     var grad = bandGradient(gradId, Y, yt, yb, lo, hi, disp);
     if (grad) s = grad + s;
-    var lineStroke = grad ? "url(#" + gradId + ")" : "var(--ink)";
+    /* The colour goes in the FILL, not the stroke. As a 3px line the scale's
+       mid bands (#eab308 at 15-20°C especially) read as muddy brown, and the
+       line is also the thing you follow, so it wants the strongest contrast
+       on the page. Tinted underneath, it says the same thing quietly. */
+    var washFill = grad ? "url(#" + gradId + ")" : "var(--wash)";
 
     var pts = series.map(function (p) { return X(p.hoursAgo).toFixed(1) + "," + Y(disp(p.c)).toFixed(1); });
     s += '<polygon points="' + X(series[0].hoursAgo).toFixed(1) + "," + yb + " " +
          pts.join(" ") + " " + X(series[series.length - 1].hoursAgo).toFixed(1) + "," + yb +
-         '" fill="var(--wash)"/>';
+         '" fill="' + washFill + '" opacity="' + (grad ? "0.3" : "1") + '"/>';
     s += '<polyline points="' + pts.join(" ") +
-         '" fill="none" stroke="' + lineStroke + '" stroke-width="' + (3.5 * u).toFixed(1) +
+         '" fill="none" stroke="var(--ink)" stroke-width="' + (3.5 * u).toFixed(1) +
          '" stroke-linejoin="round" stroke-linecap="round"/>';
 
     /* the day's extremes, marked on the trace rather than listed beside it */
@@ -209,16 +250,16 @@
          '" fill="none" stroke="var(--mist)" stroke-width="1.5"/>';
 
     svg.innerHTML = s;
-
-    var hd = document.getElementById("tempTrendUnit");
-    if (hd) hd.textContent = unit() + " · 24 hours";
   }
 
   function boot() {
-    if (!svgEl()) return;
+    mountMobile();
     message("LOADING TEMPERATURE HISTORY");
     fetchDay().then(draw);
     setInterval(function () { fetchDay().then(draw); }, REFRESH_MS);
+    /* same reason windtrace.js ticks: the phone column is thrown away and
+       rebuilt on resize and on some updates, taking the block with it */
+    setInterval(function () { if (mountMobile()) draw(); }, 1000);
 
     var t;
     window.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(draw, 150); });
