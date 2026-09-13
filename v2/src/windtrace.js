@@ -81,6 +81,13 @@
     render();
   }
 
+  /* Published by dashboard.js off the windmax topic — the same figure the
+     WIND MAX TODAY tile shows, so the two can never disagree. */
+  function dayMax() {
+    var v = window.__FENLAND_WINDMAX__;
+    return (typeof v === "number" && isFinite(v) && v > 0) ? v : null;
+  }
+
   function hourPeak() {
     var pk = 0;
     buf.forEach(function (p) { pk = Math.max(pk, p.g, p.s); });
@@ -234,11 +241,23 @@
          '<text x="' + f(rx) + '" y="' + f(Y1) + '" font-family="' + MONO + '" font-size="' + f(fs) +
          '" fill="' + SLATE + '">0</text>';
 
-    /* hour peak and the needle — moved, never rebuilt */
-    s += '<g class="wt-peak"><line x1="' + f(cx - 5 * k) + '" y1="0" x2="' + f(cx + colW + 5 * k) +
-         '" y2="0" stroke="' + RED + '" stroke-width="' + f(2.4 * k) + '"></line>' +
-         '<text class="wt-peak-lbl" x="' + f(960 - 6 * k) + '" y="' + f(-5 * k) + '" text-anchor="end" font-family="' + MONO +
-         '" font-size="' + f(fs) + '" fill="' + RED + '"></text></g>';
+    /* The two maxima — the hour's and the day's — as pointers at the
+       column's edge rather than lines across it. A line reads as a threshold
+       the colour bands have to be seen through; an arrow reads as a mark on
+       a scale, which is what these are, and it is the same language as the
+       direction tape's pointer. Filled is the live hour, hollow the day: the
+       longer window is the fainter claim. */
+    var mk = function (cls, lblCls, fill) {
+      return '<g class="' + cls + '" style="display:none">' +
+        '<polygon points="' + f(cx + colW + 3 * k) + ',0 ' + f(cx + colW + 17 * k) + ',' + f(-7 * k) +
+        ' ' + f(cx + colW + 17 * k) + ',' + f(7 * k) + '" fill="' + fill + '" stroke="' + RED +
+        '" stroke-width="' + f(1.6 * k) + '"></polygon>' +
+        '<text class="' + lblCls + '" x="' + f(960 - 6 * k) + '" y="' + f(fs * 0.34) +
+        '" text-anchor="end" font-family="' + MONO + '" font-size="' + f(fs * 0.92) +
+        '" fill="' + RED + '"></text></g>';
+    };
+    s += mk("wt-daymax", "wt-daymax-lbl", PAPER);
+    s += mk("wt-peak", "wt-peak-lbl", RED);
     s += '<g class="wt-needle"><text class="wt-now-lbl" x="' + f(cx + colW + 12 * k) + '" y="' + f(fs * 0.36) +
          '" font-family="' + MONO + '" font-size="' + f(fs * 1.5) + '" font-weight="600" fill="' + INK + '"></text>' +
          '<line x1="' + f(cx) + '" y1="0" x2="' + f(cx + colW) + '" y2="0" stroke="' + PAPER +
@@ -273,22 +292,38 @@
       el.querySelector(".wt-needle").style.transform = "translateY(" + g.y(v) + "px)";
     });
 
-    var pk = hourPeak(), peakG = el.querySelector(".wt-peak"), lbl = el.querySelector(".wt-peak-lbl");
-    spring(peakG, pk, function (v) {
-      peakG.style.transform = "translateY(" + g.y(v) + "px)";
-      /* The WIND MAX TODAY tile carries the day's high off the windmax
-         topic, so this one has to say which window it means or the two look
-         like they disagree. */
-      if (!lbl) return;
-      lbl.textContent = "PEAK " + f(pk) + " · 1H";
-      /* In light airs the hour's peak and the current speed are a mph or two
-         apart, which puts this label on the same line as the needle's. Drop
-         it clear when that happens — the needle's reading is the one that
-         must stay put, because it is the larger of the two. */
-      var fsz = gaugeFont(g.k);
-      var clash = el._wtSpeed !== null && Math.abs(g.y(v) - g.y(el._wtSpeed)) < fsz * 1.5;
-      lbl.setAttribute("y", f(clash ? fsz * 1.35 : -5 * g.k));
-    });
+    /* Both markers hide rather than sit on top of the needle: a peak equal
+       to the current speed is not a peak, it is the reading you can already
+       see, and a red arrow claiming otherwise is noise. */
+    var fsz = gaugeFont(g.k), placed = [];
+    var marker = function (cls, lblCls, value, tag) {
+      var grp = el.querySelector("." + cls), lbl = grp && grp.querySelector("." + lblCls);
+      if (!grp) return;
+      /* Snapshot the markers placed BEFORE this one. Reading the live array
+         inside the callback would include this marker's own position, so it
+         would find a clash with itself on every frame after the first. */
+      var peers = placed.slice();
+      var live = value !== null && el._wtSpeed !== null && value > el._wtSpeed + 0.5;
+      grp.style.display = live ? "" : "none";
+      if (!live) return;
+      spring(grp, value, function (v) {
+        grp.style.transform = "translateY(" + g.y(v) + "px)";
+        if (!lbl) return;
+        lbl.textContent = tag + " " + f(value);
+        /* The needle's reading is the one that must stay put — it is the
+           largest text on the tower — so anything landing on its line, or on
+           a marker already placed, steps down instead. */
+        var y = g.y(v), off = fsz * 0.34, i;
+        var clash = function (other) { return Math.abs(y - other) < fsz * 1.45; };
+        if (clash(g.y(el._wtSpeed))) off = fsz * 1.5;
+        for (i = 0; i < peers.length; i++) if (clash(peers[i])) off = fsz * 1.5;
+        lbl.setAttribute("y", f(off));
+      });
+      placed.push(g.y(value));
+    };
+
+    marker("wt-peak", "wt-peak-lbl", hourPeak(), "1H");
+    marker("wt-daymax", "wt-daymax-lbl", dayMax(), "DAY");
   }
 
   /* ── the tape compass ───────────────────────────────────────────────────

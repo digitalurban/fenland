@@ -1173,6 +1173,11 @@
         ? 'Since midnight'
         : `10-min gust ${r1(gust10)}${gust10Dir ? ' · ' + gust10Dir : ''}`;
 
+      /* windtrace.js draws the day's high beside the hour's on the tower.
+         It reads everything else off the DOM cells, but this value never
+         reaches the DOM — it only turned the old speed dial's red marker. */
+      window.__FENLAND_WINDMAX__ = (!isNaN(dayWindMax) && dayWindMax > 0) ? dayWindMax : null;
+
       const tiles=[
         {lbl:'Relative humidity', val:Math.round(num(FIELD.outHumidity)), unit:'%', note:`Indoor ${r1(inTemp2C(num(FIELD.inTemp)))}°C · ${Math.round(num(FIELD.inHumidity))}%`},
         {lbl:'UV index', val:uv, unit:'', note:uvBand, uv:true},
