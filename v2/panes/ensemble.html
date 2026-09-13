@@ -1,0 +1,50 @@
+    <div class="detail-pane" id="paneEnsemble">
+      <div class="ens-bar">
+        <div class="ens-models" id="ensModels"></div>
+        <div class="chart-timespan-switch" id="ensHorizon" style="margin-bottom:0">
+          <button data-n="3" class="active">3 DAY</button>
+          <button data-n="7">7 DAY</button>
+          <button data-n="10">10 DAY</button>
+        </div>
+      </div>
+      <div class="ens-status" id="ensStatus">Ensemble data will load when this tab is opened.</div>
+      <div class="chart-grid">
+        <div class="chart-card">
+          <div class="chart-card-title">Temperature — every member</div>
+          <div class="ens-chart"><canvas id="ensTemp"></canvas></div>
+          <div class="ens-legend" id="ensLegend"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Rainfall — daily total &amp; probability</div>
+          <div class="ens-chart"><canvas id="ensRain"></canvas></div>
+          <div class="ens-legend"><span><i style="background:var(--faint);height:7px"></i>90th percentile</span><span><i style="background:var(--highlight);height:7px"></i>Pooled mean</span><span><i style="background:var(--ink)"></i>% members wet</span></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Wind speed — every member</div>
+          <div class="ens-chart"><canvas id="ensWind"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Pressure — every member</div>
+          <div class="ens-chart"><canvas id="ensPres"></canvas></div>
+        </div>
+      </div>
+      <div class="ens-stack">
+        <div class="chart-card">
+          <div class="chart-card-title">Written analysis · next <span id="ensHorizonLabel">3</span> days</div>
+          <div class="ens-kpis" id="ensKpis"></div>
+          <div class="ens-analysis" id="ensAnalysis"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Model comparison</div>
+          <div id="ensModelTable"><div class="chart-loading">Loading…</div></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Day by day · all models pooled · mean, 10–90% range and full member envelope</div>
+          <div id="ensDayTable"><div class="chart-loading">Loading…</div></div>
+        </div>
+      </div>
+      <div class="ens-note">
+        SOURCE — OPEN-METEO OPEN ENSEMBLE API · ECMWF · NOAA GEFS · DWD ICON · ECCC GEPS · BOM ACCESS-GE<br>
+        ANALYSIS IS GENERATED FROM THE LIVE MEMBER SPREAD ON EACH LOAD — IT IS NOT A HUMAN FORECAST. BEYOND DAY 7 READ IT AS PATTERN, NOT DETAIL.
+      </div>
+    </div>

@@ -1,0 +1,28 @@
+Fenland v2 — complete folder
+============================
+
+Unzip so these files land INSIDE your existing fenland/v2/ folder,
+overwriting what is there.
+
+Two files are deliberately NOT in this zip, so yours survive:
+
+  config.js           your live broker URLs and station settings
+  test-harness.html   not part of this project
+
+Everything else is here, including the twelve src/*.js and nine panes/*.html
+that the last zip accidentally removed.
+
+After unzipping, serve it over http rather than opening index.html directly —
+MQTT cannot open a wss:// socket from a file:// origin:
+
+  cd fenland/v2
+  python3 -m http.server 8000
+  # then open http://localhost:8000
+
+New in this version
+-------------------
+  src/tempchart.js    24-hour air temperature trace, under the barograph
+  src/windtrace.js    Beaufort spine + direction tape (updated)
+  css/windtrace.css   layout for both (updated)
+
+See README-v2.md for the full notes.

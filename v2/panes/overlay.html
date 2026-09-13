@@ -1,0 +1,34 @@
+  <div class="detail-overlay" id="detailOverlay">
+    <div class="detail-topbar">
+      <div class="detail-tabs">
+        <button class="detail-tab active" id="tabBtnCharts">HISTORY</button>
+        <button class="detail-tab" id="tabBtnForecast">FORECAST</button>
+        <button class="detail-tab" id="tabBtnStats">STATS</button>
+      </div>
+      <div class="detail-close" id="detailCloseBtn">✕ CLOSE</div>
+    </div> 
+    <div class="detail-pane active" id="paneCharts">
+      <div class="chart-timespan-switch" id="chartSpanSwitch">
+        <button data-span="day" class="active">DAY</button>
+        <button data-span="week">WEEK</button>
+        <button data-span="month">MONTH</button>
+        <button data-span="year">YEAR</button>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card"><div class="chart-card-title">Temperature &amp; Humidity</div><div class="chart-card-body" id="chartTemp"><div class="chart-loading">Loading…</div></div></div>
+        <div class="chart-card"><div class="chart-card-title">Wind</div><div class="chart-card-body" id="chartWind"><div class="chart-loading">Loading…</div></div></div>
+        <div class="chart-card"><div class="chart-card-title">Rain</div><div class="chart-card-body" id="chartRain"><div class="chart-loading">Loading…</div></div></div>
+        <div class="chart-card"><div class="chart-card-title">Barometer</div><div class="chart-card-body" id="chartBaro"><div class="chart-loading">Loading…</div></div></div>
+        <!-- AIR GRADIENT HISTORICAL CHART CARD -->
+        <div class="chart-card"><div class="chart-card-title">Air Quality (PM2.5 &amp; AQI)</div><div class="chart-card-body" id="chartAirQuality"><div class="chart-loading">Loading…</div></div></div>
+      </div>
+    </div> 
+    <div class="detail-pane" id="paneForecast">
+      <div class="forecast-hourly" id="forecastHourly"><div class="chart-loading">Loading…</div></div>
+      <div class="forecast-daily" id="forecastDaily"></div>
+    </div> 
+    <div class="detail-pane" id="paneStats">
+      <div class="stats-asof" id="statsAsOf">—</div>
+      <div id="statsTableWrap"><div class="chart-loading">Loading…</div></div>
+    </div>
+  </div>
