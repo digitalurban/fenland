@@ -171,17 +171,27 @@
      are reserved, or the text runs off the viewBox. */
   function gaugeFont(k) { return Math.min(13 * k, 64); }   // caps the type in a very narrow box
 
-  function columnBox(k) {
+  /* The column's width follows its own HEIGHT, not the box's width. 150k
+     viewBox units is 150 real pixels in any box, so pinning the width to k
+     made the tower thin in the tall desktop spine and a thick block in a
+     full-width phone column — the same code, two different shapes. Deriving
+     it from the height instead holds one aspect ratio everywhere, and the
+     desktop spine is already at the 150k ceiling so it does not move. */
+  var COL_ASPECT = 5.5;
+
+  function columnBox(k, H) {
     var fs = gaugeFont(k);
     var left = 2.4 * fs + 10 * k;                      // "B8" plus its tick
     var right = 7.6 * fs + 6 * k;                      // "00.0 mph" at 1.5x
-    var colW = Math.min(150 * k, Math.max(40 * k, 960 - left - right));
-    return { colW: colW, cx: left + Math.max(0, (960 - left - right - colW) / 2) };
+    var avail = 960 - left - right;
+    var wanted = (H - 56 * k) / COL_ASPECT;            // 56k is Y0 + the bottom margin
+    var colW = Math.min(150 * k, Math.max(40 * k, Math.min(avail, wanted)));
+    return { colW: colW, cx: left + Math.max(0, (avail - colW) / 2) };
   }
 
   function gaugeGeom(el) {
     var k = parseFloat(el.dataset.k), H = parseFloat(el.dataset.h), max = parseFloat(el.dataset.max);
-    var g = columnBox(k);
+    var g = columnBox(k, H);
     var Y0 = 26 * k, Y1 = H - 30 * k;
     return { k: k, H: H, max: max, colW: g.colW, cx: g.cx, Y0: Y0, Y1: Y1,
              y: function (v) { return Y1 - (Y1 - Y0) * Math.max(0, Math.min(v, max)) / max; } };
@@ -191,7 +201,7 @@
      ever used its width: the scale gets the long axis and the Beaufort
      labels get room to sit beside it rather than on top of each other. */
   function gaugeStatic(H, k, max, m) {
-    var box = columnBox(k), colW = box.colW, cx = box.cx, fs = gaugeFont(k);
+    var box = columnBox(k, H), colW = box.colW, cx = box.cx, fs = gaugeFont(k);
     var Y0 = 26 * k, Y1 = H - 30 * k;
     var y = function (v) { return Y1 - (Y1 - Y0) * Math.max(0, Math.min(v, max)) / max; };
     var s = "";
