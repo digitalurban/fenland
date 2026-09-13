@@ -269,7 +269,15 @@
       /* The WIND MAX TODAY tile carries the day's high off the windmax
          topic, so this one has to say which window it means or the two look
          like they disagree. */
-      if (lbl) lbl.textContent = "PEAK " + f(pk) + " · 1H";
+      if (!lbl) return;
+      lbl.textContent = "PEAK " + f(pk) + " · 1H";
+      /* In light airs the hour's peak and the current speed are a mph or two
+         apart, which puts this label on the same line as the needle's. Drop
+         it clear when that happens — the needle's reading is the one that
+         must stay put, because it is the larger of the two. */
+      var fsz = gaugeFont(g.k);
+      var clash = el._wtSpeed !== null && Math.abs(g.y(v) - g.y(el._wtSpeed)) < fsz * 1.5;
+      lbl.setAttribute("y", f(clash ? fsz * 1.35 : -5 * g.k));
     });
   }
 
