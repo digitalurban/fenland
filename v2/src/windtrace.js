@@ -252,8 +252,11 @@
         '<polygon points="' + f(cx + colW + 3 * k) + ',0 ' + f(cx + colW + 17 * k) + ',' + f(-7 * k) +
         ' ' + f(cx + colW + 17 * k) + ',' + f(7 * k) + '" fill="' + fill + '" stroke="' + RED +
         '" stroke-width="' + f(1.6 * k) + '"></polygon>' +
-        '<text class="' + lblCls + '" x="' + f(960 - 6 * k) + '" y="' + f(fs * 0.34) +
-        '" text-anchor="end" font-family="' + MONO + '" font-size="' + f(fs * 0.92) +
+        /* Left-anchored just clear of the arrow's base, not right-anchored
+           to the box edge: anchored at the edge, a longer reading grows
+           leftward and runs back over its own arrow. */
+        '<text class="' + lblCls + '" x="' + f(cx + colW + 22 * k) + '" y="' + f(fs * 0.34) +
+        '" font-family="' + MONO + '" font-size="' + f(fs * 0.92) +
         '" fill="' + RED + '"></text></g>';
     };
     s += mk("wt-daymax", "wt-daymax-lbl", PAPER);
