@@ -312,7 +312,10 @@
       spring(grp, value, function (v) {
         grp.style.transform = "translateY(" + g.y(v) + "px)";
         if (!lbl) return;
-        lbl.textContent = tag + " " + f(value);
+        /* Whole numbers. A daily maximum to a tenth of a mph is precision
+           the anemometer does not have, the tile carries the exact figure,
+           and the decimal was the character that kept overrunning the box. */
+        lbl.textContent = tag + " " + Math.round(value);
         /* Ask the text how wide it actually is rather than estimating from
            the font size and character count — mono or not, every estimate I
            tried was wrong somewhere, and getComputedTextLength is exact. Sit
@@ -320,6 +323,11 @@
            arrow's base. */
         var tw = 0;
         try { tw = lbl.getComputedTextLength() || 0; } catch (e) {}
+        /* Zero means it was not rendered yet — the group is display:none on
+           its first frame — and the spring stops calling back once it comes
+           to rest, so an unclamped x set now would simply stay. Estimate in
+           that case: mono, so character count is a fair guide. */
+        if (!tw) tw = lbl.textContent.length * 0.62 * fsz * 0.92;
         var wantX = g.cx + g.colW + 22 * g.k;
         var maxX = 960 - 4 * g.k - tw;
         lbl.setAttribute("x", f(Math.max(g.cx + g.colW + 20 * g.k, Math.min(wantX, maxX))));
