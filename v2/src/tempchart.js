@@ -54,6 +54,48 @@
       });
   }
 
+  /* colours.js owns the temperature palette — the same bands the History
+     charts zone by and the forecast colour key prints. Reading it from there
+     rather than restating it keeps one source of truth; if it has not
+     loaded, the trace stays ink and nothing breaks. */
+  function tempScale() {
+    var w = window.__WXCOLOURS__;
+    return (w && w.TEMP_SCALE && w.TEMP_SCALE.length) ? w.TEMP_SCALE : null;
+  }
+
+  /* thresholds are °C, and series values are °C, so no conversion here */
+  function bandColour(c) {
+    var s = tempScale();
+    if (!s) return "var(--ink)";
+    for (var i = 0; i < s.length; i++) if (s[i].max === null || c <= s[i].max) return s[i].c;
+    return s[s.length - 1].c;
+  }
+
+  /* A gradient down the plot with hard stops at each band edge paints the
+     line by value without splitting it into hundreds of segments. Offsets
+     run top (hot) to bottom (cold), which is why the bands are walked in
+     reverse. Edges convert to display units because Y() does. */
+  function bandGradient(id, Y, yt, yb, lo, hi, dispFn) {
+    var s = tempScale();
+    if (!s || yb <= yt) return null;
+    var clamp = function (o) { return Math.max(0, Math.min(1, o)); };
+    var off = function (v) { return clamp((Y(v) - yt) / (yb - yt)); };
+    var stops = "", any = false;
+    for (var i = s.length - 1; i >= 0; i--) {
+      var top = s[i].max === null ? hi : Math.min(dispFn(s[i].max), hi);
+      var bot = i === 0 ? lo : Math.max(dispFn(s[i - 1].max), lo);
+      if (bot >= top) continue;                       // band outside the view
+      var a = off(top), b = off(bot);
+      stops += '<stop offset="' + a.toFixed(4) + '" stop-color="' + s[i].c + '"/>' +
+               '<stop offset="' + b.toFixed(4) + '" stop-color="' + s[i].c + '"/>';
+      any = true;
+    }
+    if (!any) return null;
+    return '<defs><linearGradient id="' + id + '" gradientUnits="userSpaceOnUse"' +
+           ' x1="0" y1="' + yt.toFixed(1) + '" x2="0" y2="' + yb.toFixed(1) + '">' +
+           stops + '</linearGradient></defs>';
+  }
+
   function svgEl() { return document.getElementById("tempSvg"); }
 
   function message(txt) {
@@ -127,12 +169,17 @@
            ' fill="var(--accent)">FREEZING</text>';
     }
 
+    var gradId = "tempBands";
+    var grad = bandGradient(gradId, Y, yt, yb, lo, hi, disp);
+    if (grad) s = grad + s;
+    var lineStroke = grad ? "url(#" + gradId + ")" : "var(--ink)";
+
     var pts = series.map(function (p) { return X(p.hoursAgo).toFixed(1) + "," + Y(disp(p.c)).toFixed(1); });
     s += '<polygon points="' + X(series[0].hoursAgo).toFixed(1) + "," + yb + " " +
          pts.join(" ") + " " + X(series[series.length - 1].hoursAgo).toFixed(1) + "," + yb +
          '" fill="var(--wash)"/>';
     s += '<polyline points="' + pts.join(" ") +
-         '" fill="none" stroke="var(--ink)" stroke-width="' + (3.5 * u).toFixed(1) +
+         '" fill="none" stroke="' + lineStroke + '" stroke-width="' + (3.5 * u).toFixed(1) +
          '" stroke-linejoin="round" stroke-linecap="round"/>';
 
     /* the day's extremes, marked on the trace rather than listed beside it */
@@ -156,7 +203,8 @@
 
     var last = series[series.length - 1];
     s += '<circle cx="' + X(last.hoursAgo).toFixed(1) + '" cy="' + Y(disp(last.c)).toFixed(1) +
-         '" r="' + (6.5 * u).toFixed(1) + '" fill="var(--ink)"/>';
+         '" r="' + (6.5 * u).toFixed(1) + '" fill="' + bandColour(last.c) +
+         '" stroke="var(--paper)" stroke-width="' + (1.6 * u).toFixed(1) + '"/>';
     s += '<rect x="' + xs + '" y="' + yt + '" width="' + (xe - xs) + '" height="' + (yb - yt) +
          '" fill="none" stroke="var(--mist)" stroke-width="1.5"/>';
 
