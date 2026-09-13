@@ -321,8 +321,15 @@
       var x = bx(d), deg = ((d % 360) + 360) % 360;
       var maj = deg % 45 === 0, mid = deg % 30 === 0;
       var t = maj ? top : mid ? top + (bot - top) * 0.26 : top + (bot - top) * 0.46;
-      s += '<line x1="' + f(x) + '" y1="' + f(t) + '" x2="' + f(x) + '" y2="' + f(bot) + '" stroke="' +
-           (maj ? INK : mid ? SLATE : MIST) + '" stroke-width="' + f((maj ? 2.6 : mid ? 1.8 : 1.4) * k) + '"></line>';
+      /* The desktop frame is transform-scaled to fit the viewport, so a tick
+         drawn at 1.4 units came out around three-quarters of a CSS pixel on a
+         1024-wide iPad — and in MIST, the palette's lightest grey, which
+         washed the 10° and 20° ticks out altogether. Heavier weights survive
+         the scale, and crispEdges snaps them to the pixel grid rather than
+         letting antialiasing spread them below visibility. */
+      s += '<line x1="' + f(x) + '" y1="' + f(t) + '" x2="' + f(x) + '" y2="' + f(bot) +
+           '" shape-rendering="crispEdges" stroke="' + (maj ? INK : mid ? SLATE : MIST) +
+           '" stroke-width="' + f((maj ? 3.4 : mid ? 2.8 : 2.2) * k) + '"></line>';
     }
 
     var NAMES = { 0: "N", 45: "NE", 90: "E", 135: "SE", 180: "S", 225: "SW", 270: "W", 315: "NW" };
