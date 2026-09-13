@@ -313,6 +313,16 @@
         grp.style.transform = "translateY(" + g.y(v) + "px)";
         if (!lbl) return;
         lbl.textContent = tag + " " + f(value);
+        /* Ask the text how wide it actually is rather than estimating from
+           the font size and character count — mono or not, every estimate I
+           tried was wrong somewhere, and getComputedTextLength is exact. Sit
+           as far right as fits inside the box, no further left than the
+           arrow's base. */
+        var tw = 0;
+        try { tw = lbl.getComputedTextLength() || 0; } catch (e) {}
+        var wantX = g.cx + g.colW + 22 * g.k;
+        var maxX = 960 - 4 * g.k - tw;
+        lbl.setAttribute("x", f(Math.max(g.cx + g.colW + 20 * g.k, Math.min(wantX, maxX))));
         /* The needle's reading is the one that must stay put — it is the
            largest text on the tower — so anything landing on its line, or on
            a marker already placed, steps down instead. */
