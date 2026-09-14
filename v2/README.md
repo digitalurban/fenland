@@ -5,7 +5,8 @@ live dashboard — built to sit alongside
 [Belchertown skin](https://github.com/poblabs/weewx-belchertown)
 
 **[Live demo](https://digitalurban.github.io/fenland/)** ·
-[Install](#install) · [Configuration](#configuration) · [weeWX notes](weewx/README.md)
+[Install](#install) · [Configuration](#configuration) · [v2 dashboard](v2/README.md) ·
+[weeWX notes](weewx/README.md)
 
 <a href="docs/img/dashboard.jpg"><img src="docs/img/dashboard.jpg" width="900" alt="Fenland dashboard"></a>
 
@@ -33,6 +34,20 @@ on a 13″ laptop, comfortable on a 4K panel, and it falls back to a stacked
 mobile layout on a phone.
 
 <br clear="all">
+
+#### v2 — the wind panel redrawn
+
+<a href="v2/docs/img/dashboard-bars.png"><img src="v2/docs/img/dashboard-bars.png" width="900" alt="Fenland v2 dashboard"></a>
+
+The `v2/` folder is a complete second copy of the site with the wind section
+rebuilt: a full-height Beaufort tower down the left edge, a direction tape
+across the foot of the page, two columns of tiles and a 24-hour air
+temperature trace under the barograph. It reads the same `config.js` as v1 and
+adds one key, `windPanel`, which switches back to the round dials if you
+prefer them.
+
+Deploy `v2/` instead of the root folder to use it, or stay on v1 — both are
+maintained from the same panels. **[Full notes and install →](v2/README.md)**
 
 ### Forecast
 
@@ -270,6 +285,7 @@ Everything is in `config.js`; `config.example.js` is the annotated reference.
 | `themeToggle` | no | Footer button letting visitors override the theme. Default `true` |
 | `airQuality` | no | `auto` uses your sensor if configured, else Open-Meteo. `false` disables |
 | `windScale` | no | Corrects displayed wind towards a 10 m equivalent — see below |
+| `windPanel` | no | **v2 only.** `bars` (default) or `dials` — see [v2/README.md](v2/README.md) |
 
 Everything is computed internally in metric and converted only for display, so
 thresholds, rankings and confidence ratings stay consistent whichever units you
@@ -578,7 +594,7 @@ Open-Meteo's paid tier.
 
 ## Status and roadmap
 
-Version 1.9.1. Running in production at
+Version 1.9.8. Running in production at
 [digitalurban.github.io/fenland](https://digitalurban.github.io/fenland/), which
 is also the demo — so if the demo is broken, so is the author's weather station.
 
