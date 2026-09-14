@@ -370,11 +370,25 @@
 
     var s = '<rect x="' + f(X0) + '" y="' + f(top) + '" width="' + f(X1 - X0) + '" height="' + f(bot - top) +
             '" fill="' + PAPER + '" stroke="' + FAINT + '" stroke-width="' + f(1.6 * k) + '"></rect>';
-    s += '<rect class="wt-band" x="0" y="' + f(top + 1.6 * k) + '" width="0" height="' + f(bot - top - 3.2 * k) +
+    /* The wander band fills the lane rather than sitting inset inside it.
+       Inset by 1.6k it became a hairline wherever --k is at its floor — an
+       iPad at 1024 wide — and a band you cannot see is worse than none,
+       because the WANDER key in the header promises one. */
+    s += '<rect class="wt-band" x="0" y="' + f(top + 0.8 * k) + '" width="0" height="' + f(bot - top - 1.6 * k) +
          '" fill="' + LIGHT + '"></rect>';
 
-    for (var d = LO; d <= HI; d += 10) {
-      var x = bx(d), deg = ((d % 360) + 360) % 360;
+    /* The minor grid has to be a SUBDIVISION of the labelled points or the
+       strip reads as randomly spaced. It was a 30° grid under 45° labels:
+       30 and 45 share only 90, so between S and SW the small marks fell at
+       210 and 240 and never on 225 — no mark lined up with SW, NW, NE or SE
+       and the rhythm looked accidental. 11.25° is the 32-point compass, and
+       every 45° label sits exactly on a mark. Stepped by index rather than
+       by adding 11.25 repeatedly, so there is no float drift and no modulo
+       against a fraction. */
+    var STEPS = 32, DEG = (HI - LO) / STEPS;
+    for (var i = 0; i <= STEPS; i++) {
+      var x = bx(LO + i * DEG);
+      var card = i % 8 === 0, inter = i % 4 === 0, half = i % 2 === 0;
       /* Four weights, and the cardinals deliberately BREAK the lane. The
          tick lane is only about twenty units deep, so "full height, heavier
          stroke" — which is what this did first — made a cardinal read as a
@@ -382,21 +396,19 @@
          mark. Running N/E/S/W past the lane's lower edge into the gutter
          above their label gives them a shape nothing else has, and ties each
          one visually to the word underneath it. */
-      var card = deg % 90 === 0, maj = deg % 45 === 0, mid = deg % 30 === 0;
-      var t = card ? top
-            : maj ? top
-            : mid ? top + (bot - top) * 0.30
+      var t = inter ? top
+            : half ? top + (bot - top) * 0.30
             : top + (bot - top) * 0.50;
       var b2 = card ? bot + 7 * k : bot;
       /* The desktop frame is transform-scaled to fit the viewport, so a tick
          drawn at 1.4 units came out around three-quarters of a CSS pixel on a
          1024-wide iPad — and in MIST, the palette's lightest grey, which
-         washed the 10° and 20° ticks out altogether. Heavier weights survive
-         the scale, and crispEdges snaps them to the pixel grid rather than
+         washed the finest ticks out altogether. Heavier weights survive the
+         scale, and crispEdges snaps them to the pixel grid rather than
          letting antialiasing spread them below visibility. */
       s += '<line x1="' + f(x) + '" y1="' + f(t) + '" x2="' + f(x) + '" y2="' + f(b2) +
-           '" shape-rendering="crispEdges" stroke="' + (maj ? INK : mid ? SLATE : MIST) +
-           '" stroke-width="' + f((card ? 5.0 : maj ? 3.0 : mid ? 2.8 : 2.2) * k) + '"></line>';
+           '" shape-rendering="crispEdges" stroke="' + (inter ? INK : half ? SLATE : MIST) +
+           '" stroke-width="' + f((card ? 5.0 : inter ? 3.0 : half ? 2.6 : 2.2) * k) + '"></line>';
     }
 
     var NAMES = { 0: "N", 45: "NE", 90: "E", 135: "SE", 180: "S", 225: "SW", 270: "W", 315: "NW" };
@@ -445,9 +457,15 @@
       dots += '<circle cx="' + f(g.bx(p.d)) + '" cy="' + f(bot - (bot - top) * 0.12) + '" r="' +
               f((1 + 1.6 * t) * g.k) + '" fill="' + ACCENT + '" opacity="' + (0.15 + 0.6 * t).toFixed(2) + '"></circle>';
     });
-    if (lo !== null && hi > lo) {
-      band.setAttribute("x", f(g.bx(lo)));
-      band.setAttribute("width", f(g.bx(hi) - g.bx(lo)));
+    /* A steady wind gives hi === lo and a band of width zero, which is
+       indistinguishable from a broken band — and on a settled day an iPad
+       would show nothing at all beside a header that says WANDER. Give it a
+       floor wide enough to read as a mark, centred on the bearing. */
+    if (lo !== null) {
+      var x0 = g.bx(lo), x1 = g.bx(hi), min = 5 * g.k;
+      if (x1 - x0 < min) { var mid = (x0 + x1) / 2; x0 = mid - min / 2; x1 = mid + min / 2; }
+      band.setAttribute("x", f(x0));
+      band.setAttribute("width", f(x1 - x0));
     } else band.setAttribute("width", "0");
     track.innerHTML = dots;
   }

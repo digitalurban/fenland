@@ -14,7 +14,7 @@
 <title>Fenland — v2 wind panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=1.10.0"></script>
+<script src="config.js?v=1.10.1"></script>
 <script>
 /* Resolve the theme before the stylesheets paint, otherwise a dark-mode user
    gets a white flash on every load. Deliberately inline and dependency-free:
@@ -48,8 +48,8 @@
   } catch (e) { /* a broken config must never leave the page unstyled */ }
 })();
 </script>
-<link rel="stylesheet" href="css/dashboard.css?v=1.10.0">
-<link rel="stylesheet" href="css/panels.css?v=1.10.0">
+<link rel="stylesheet" href="css/dashboard.css?v=1.10.1">
+<link rel="stylesheet" href="css/panels.css?v=1.10.1">
 <script>
 /* The bar skin is a stylesheet override, so it has to be decided before the
    first paint rather than by a script at the end of the body — otherwise the
@@ -58,7 +58,7 @@
 (function () {
   try {
     if (String(((window.WXCONFIG || {}).windPanel) || "bars").toLowerCase() === "dials") return;
-    document.write('<link rel="stylesheet" href="css/windtrace.css?v=1.10.0">');
+    document.write('<link rel="stylesheet" href="css/windtrace.css?v=1.10.1">');
   } catch (e) { /* a broken config must never leave the page unstyled */ }
 })();
 </script>
@@ -352,18 +352,18 @@
     </div>
   </div>
 
-<script src="src/units.js?v=1.10.0"></script>
-<script src="src/colours.js?v=1.10.0"></script>
-<script src="src/airquality.js?v=1.10.0"></script>
-<script src="src/dashboard.js?v=1.10.0"></script>
-<script src="src/windtrace.js?v=1.10.0"></script>
-<script src="src/tempchart.js?v=1.10.0"></script>
-<script src="src/ensemble.js?v=1.10.0"></script>
-<script src="src/forecast.js?v=1.10.0"></script>
-<script src="src/climate.js?v=1.10.0"></script>
-<script src="src/verify-panel.js?v=1.10.0"></script>
-<script src="src/windrose.js?v=1.10.0"></script>
-<script src="src/solar.js?v=1.10.0"></script>
-<script src="src/windy.js?v=1.10.0"></script>
+<script src="src/units.js?v=1.10.1"></script>
+<script src="src/colours.js?v=1.10.1"></script>
+<script src="src/airquality.js?v=1.10.1"></script>
+<script src="src/dashboard.js?v=1.10.1"></script>
+<script src="src/windtrace.js?v=1.10.1"></script>
+<script src="src/tempchart.js?v=1.10.1"></script>
+<script src="src/ensemble.js?v=1.10.1"></script>
+<script src="src/forecast.js?v=1.10.1"></script>
+<script src="src/climate.js?v=1.10.1"></script>
+<script src="src/verify-panel.js?v=1.10.1"></script>
+<script src="src/windrose.js?v=1.10.1"></script>
+<script src="src/solar.js?v=1.10.1"></script>
+<script src="src/windy.js?v=1.10.1"></script>
 </body>
 </html>
