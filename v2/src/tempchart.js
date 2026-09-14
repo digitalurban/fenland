@@ -5,11 +5,15 @@
    in the barograph's own visual language: faint gridlines, a wash fill, an
    ink line, a dot at NOW.
 
-   It reads the same file the HISTORY & FORECAST charts already read —
-   `<jsonBase>day.json`, series `chart1.series.outTemp` — so nothing new is
-   published and dashboard.js is untouched. Station units are honoured the
-   same way dashboard.js honours them (CFG.stationUnits.temp), and the
-   displayed unit follows window.U, so the °C/°F toggle carries through.
+   It reads the same files the HISTORY & FORECAST charts already read, series
+   `chart1.series.outTemp` — so nothing new is published and dashboard.js is
+   untouched. Two files, not one: weeWX's day.json starts at local midnight,
+   so before noon it is a half-empty chart (at 07:46 it holds eight hours).
+   week.json covers the days behind us at coarser resolution, so the hours
+   before midnight are backfilled from it and day.json supplies the recent,
+   finer detail. Station units are honoured the same way dashboard.js honours
+   them (CFG.stationUnits.temp), and the displayed unit follows window.U, so
+   the °C/°F toggle carries through.
 
    Like windtrace.js the SVG's viewBox is the measured pixel size of its box,
    so nothing is stretched: at 1920 the frame's k is 1 and a 14px label is
@@ -32,26 +36,42 @@
   function disp(c) { return (window.U && window.U.axisTemp) ? window.U.axisTemp(c) : c; }
   function unit() { return (window.U && window.U.tempUnit) ? window.U.tempUnit : "°C"; }
 
+  function points(json) {
+    var s = json && json.chart1 && json.chart1.series && json.chart1.series.outTemp;
+    if (!s || !Array.isArray(s.data)) return [];
+    return s.data.filter(function (p) {
+      return p && p[1] !== null && p[1] !== undefined;
+    });
+  }
+
+  function grab(file) {
+    return fetch(BASE + file + "?cacheburst=" + Date.now())
+      .then(function (r) { return r.json(); })
+      .then(points)
+      .catch(function (e) {
+        console.warn("Fenland temp trend — " + file + " unavailable:", e.message);
+        return [];
+      });
+  }
+
   function fetchDay() {
     if (!BASE) return Promise.resolve(false);
-    return fetch(BASE + "day.json?cacheburst=" + Date.now())
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        var s = j && j.chart1 && j.chart1.series && j.chart1.series.outTemp;
-        if (!s || !Array.isArray(s.data)) throw new Error("outTemp series missing");
-        var now = Date.now();
-        series = s.data
-          .filter(function (p) { return p && p[1] !== null && p[1] !== undefined; })
-          .map(function (p) { return { hoursAgo: (now - p[0]) / 3600000, c: toC(p[1]) }; })
-          .filter(function (p) { return p.hoursAgo >= 0 && p.hoursAgo <= SPAN_H; })
-          .sort(function (a, b) { return b.hoursAgo - a.hoursAgo; });
-        lastFetch = now;
-        return true;
-      })
-      .catch(function (e) {
-        console.warn("Fenland temp trend — day.json unavailable:", e.message);
-        return false;
-      });
+    return Promise.all([grab("day.json"), grab("week.json")]).then(function (r) {
+      var day = r[0], week = r[1];
+      if (!day.length && !week.length) return false;
+      /* day.json wins wherever it has cover: it is the finer trace, and the
+         two files can disagree slightly where week.json has averaged. So the
+         week points are only kept for timestamps before day.json begins. */
+      var from = day.length ? day[0][0] : Infinity;
+      var now = Date.now();
+      series = week.filter(function (p) { return p[0] < from; })
+        .concat(day)
+        .map(function (p) { return { hoursAgo: (now - p[0]) / 3600000, c: toC(p[1]) }; })
+        .filter(function (p) { return p.hoursAgo >= 0 && p.hoursAgo <= SPAN_H; })
+        .sort(function (a, b) { return b.hoursAgo - a.hoursAgo; });
+      lastFetch = now;
+      return series.length > 0;
+    });
   }
 
   /* colours.js owns the temperature palette — the same bands the History
