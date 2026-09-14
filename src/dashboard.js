@@ -23,7 +23,7 @@
   /* Bump on release. Shown in the footer credit and worth quoting in any
      bug report — "which version are you on" is the first question. */
   const FENLAND = {
-    version: "1.9.9",
+    version: "1.9.6",
     url: "https://github.com/digitalurban/fenland"
   };
 
@@ -303,7 +303,7 @@
         pressureHistory = rawLog.sort((a, b) => a.t - b.t).map(point => ({
           minsAgo: Math.max(0, Math.round((now - point.t) / 60)),
           mb: inPres2mb(parseFloat(point.mb))
-        })).filter(point => point.minsAgo <= 1440);
+        })).filter(point => point.minsAgo <= 720);
       } catch (e) {
         console.warn("History log file missing or unreadable — keeping last known data:", e);
       }
@@ -910,7 +910,7 @@
       if (isNaN(lo) || isNaN(hi)) return '';
       const W=960, H=360, mL=66, mR=24, mT=22, mB=34;
       const xs=mL, xe=W-mR, yt=mT, yb=H-mB;
-      const maxMins=1440;   /* 24 h, the same window the temperature trace uses */
+      const maxMins=720;
       const X=mins=>xe-(mins/maxMins)*(xe-xs);
       const Y=mb=>yb-((mb-lo)/(hi-lo))*(yb-yt); 
 
@@ -929,7 +929,7 @@
         s+=`<line x1="${xs}" y1="${y}" x2="${xe}" y2="${y}" stroke="var(--faint)" stroke-width="1.2"/>`;
         s+=`<text x="${xs-12}" y="${y+5}" text-anchor="end" font-family="var(--mono)" font-size="14" fill="var(--slate)">${v}</text>`;
       }
-      for(let h=24; h>=0; h-=4){
+      for(let h=12; h>=0; h-=2){
         const x=X(h*60);
         s+=`<line x1="${x}" y1="${yt}" x2="${x}" y2="${yb}" stroke="var(--faint)" stroke-width="1.2"/>`;
         s+=`<text x="${x}" y="${yb+22}" text-anchor="middle" font-family="var(--mono)" font-size="13" fill="var(--slate)">${h===0?'NOW':'-'+h+'h'}</text>`;
@@ -1163,21 +1163,6 @@
       const aqiTrendText = liveAqiTrend ? liveAqiTrend.charAt(0).toUpperCase() + liveAqiTrend.slice(1) : null;
       const aqiNote = aqiTrendText ? `${aqiBand} · ${aqiTrendText}` : aqiBand; 
 
-      /* windGustDir10 arrives on its own topic and until now only turned the
-         compass rose's gust marker, so in the bar layout it was read by
-         nothing at all. */
-      const gust10 = inWind(num(FIELD.windGust10));
-      const gust10Dir = (!isNaN(windGustDir10) && windGustDir10 > 0)
-        ? compass16[Math.round(windGustDir10 / 22.5) % 16] : null;
-      const windMaxNote = isNaN(gust10)
-        ? 'Since midnight'
-        : `10-min gust ${r1(gust10)}${gust10Dir ? ' · ' + gust10Dir : ''}`;
-
-      /* windtrace.js draws the day's high beside the hour's on the tower.
-         It reads everything else off the DOM cells, but this value never
-         reaches the DOM — it only turned the old speed dial's red marker. */
-      window.__FENLAND_WINDMAX__ = (!isNaN(dayWindMax) && dayWindMax > 0) ? dayWindMax : null;
-
       const tiles=[
         {lbl:'Relative humidity', val:Math.round(num(FIELD.outHumidity)), unit:'%', note:`Indoor ${r1(inTemp2C(num(FIELD.inTemp)))}°C · ${Math.round(num(FIELD.inHumidity))}%`},
         {lbl:'UV index', val:uv, unit:'', note:uvBand, uv:true},
@@ -1187,8 +1172,7 @@
         {lbl:'Storm rain', val:r1(inRain2mm(num(FIELD.stormRain))), unit:U.rainUnit, note:'Storm total', isRain: activeStormRain},
         {lbl:'PM2.5', val:pm25Val===null?'--':pm25Val, unit:'µg/m³', note:'AirGradient'},
         {lbl:'Air quality', val:aqiVal===null?'--':aqiVal, unit:'', note:aqiNote, aqi:true},
-        {lbl:'Lightning', val:liveLightningCount===null?'--':Math.round(liveLightningCount), unit:'', note: liveLightningDistance===null ? 'Strikes detected · Blitzortung' : `Nearest ${r1(liveLightningDistance)} km away`},
-        {lbl:'Wind max today', val: dayWindMax ? r1(dayWindMax) : '--', unit: U.windUnit, note: windMaxNote}
+        {lbl:'Lightning', val:liveLightningCount===null?'--':Math.round(liveLightningCount), unit:'', note: liveLightningDistance===null ? 'Strikes detected · Blitzortung' : `Nearest ${r1(liveLightningDistance)} km away`}
       ]; 
 
       let localHistory = [...pressureHistory];

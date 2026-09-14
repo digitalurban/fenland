@@ -375,8 +375,16 @@
 
     for (var d = LO; d <= HI; d += 10) {
       var x = bx(d), deg = ((d % 360) + 360) % 360;
-      var maj = deg % 45 === 0, mid = deg % 30 === 0;
-      var t = maj ? top : mid ? top + (bot - top) * 0.26 : top + (bot - top) * 0.46;
+      /* Four weights, not three. The cardinals carry the compass — they are
+         what the eye anchors on — so N/E/S/W get the heaviest full-height
+         ink mark and the intercardinals a lighter, slightly shorter one.
+         Drawn at one weight, as they were, NE read as loud as N and the
+         whole strip flattened into an undifferentiated ruler. */
+      var card = deg % 90 === 0, maj = deg % 45 === 0, mid = deg % 30 === 0;
+      var t = card ? top
+            : maj ? top + (bot - top) * 0.13
+            : mid ? top + (bot - top) * 0.26
+            : top + (bot - top) * 0.46;
       /* The desktop frame is transform-scaled to fit the viewport, so a tick
          drawn at 1.4 units came out around three-quarters of a CSS pixel on a
          1024-wide iPad — and in MIST, the palette's lightest grey, which
@@ -385,16 +393,24 @@
          letting antialiasing spread them below visibility. */
       s += '<line x1="' + f(x) + '" y1="' + f(t) + '" x2="' + f(x) + '" y2="' + f(bot) +
            '" shape-rendering="crispEdges" stroke="' + (maj ? INK : mid ? SLATE : MIST) +
-           '" stroke-width="' + f((maj ? 3.4 : mid ? 2.8 : 2.2) * k) + '"></line>';
+           '" stroke-width="' + f((card ? 4.6 : maj ? 3.0 : mid ? 2.8 : 2.2) * k) + '"></line>';
     }
 
     var NAMES = { 0: "N", 45: "NE", 90: "E", 135: "SE", 180: "S", 225: "SW", 270: "W", 315: "NW" };
     for (var dd = LO; dd <= HI; dd += 45) {
-      var nm = NAMES[((dd % 360) + 360) % 360];
+      var nd = ((dd % 360) + 360) % 360, nm = NAMES[nd];
       if (!nm) continue;
-      var lx = Math.min(Math.max(bx(dd), X0 + 14 * k), X1 - 14 * k);
-      s += '<text x="' + f(lx) + '" y="' + f(H - 2 * k) + '" text-anchor="middle" font-family="' + SANS +
-           '" font-size="' + f(fsCard) + '" font-weight="bold" fill="' + INK + '">' + nm + '</text>';
+      /* Centre the label on its own tick. The old version clamped x inside
+         the frame, which kept the end labels from overflowing but slid them
+         off the mark they name — the S at the left edge sat visibly right of
+         its tick. Switching the anchor at the ends does the same job without
+         moving the label: the text grows inward from the tick instead. */
+      var tx = bx(dd), anchor = "middle";
+      if (tx - X0 < 18 * k) { anchor = "start"; tx = Math.max(tx, X0 + 2 * k); }
+      else if (X1 - tx < 18 * k) { anchor = "end"; tx = Math.min(tx, X1 - 2 * k); }
+      s += '<text x="' + f(tx) + '" y="' + f(H - 2 * k) + '" text-anchor="' + anchor +
+           '" font-family="' + SANS + '" font-size="' + f(fsCard) +
+           '" font-weight="bold" fill="' + (nd % 90 === 0 ? INK : SLATE) + '">' + nm + '</text>';
     }
 
     s += '<g class="wt-track"></g>';
