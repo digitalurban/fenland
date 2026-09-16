@@ -145,6 +145,48 @@ HTML = '''<!DOCTYPE html>
          style once. */
       var bar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
       if (bar) bar.setAttribute("content", "default");
+
+      /* --k, measured rather than declared. The CSS fit is built on viewport
+         units, and on this phone in standalone they do not describe the space
+         the frame actually gets: against 473px of real visible height, dvh
+         reported 594 and svh was no better, so the frame kept being built
+         taller than the screen and running off the bottom. visualViewport
+         does report 473, so full view sizes the design pixel from that and
+         from the scaler's own padding, with no lower clamp — whole frame,
+         however small that makes it. Re-run on resize and rotation. */
+      var fitFrame = function () {
+        var vv = window.visualViewport;
+        var w = vv ? vv.width : window.innerWidth;
+        var h = vv ? vv.height : window.innerHeight;
+        var pad = 24;
+        var sc = document.querySelector(".desktop-only-scaler");
+        if (sc) {
+          var cs = getComputedStyle(sc);
+          pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+        }
+        var k = Math.min(w / 1960, (h - pad - 4) / 1404);
+        if (!(k > 0)) return;
+        document.documentElement.style.setProperty("--k", k.toFixed(4) + "px");
+        if (/diag/.test(location.hash)) {
+          var d = document.getElementById("fenFit") || document.createElement("div");
+          d.id = "fenFit";
+          d.setAttribute("style", "position:fixed;left:0;bottom:0;z-index:99999;background:#000;" +
+            "color:#0f0;font:600 11px ui-monospace,monospace;padding:2px 5px");
+          d.textContent = Math.round(w) + "x" + Math.round(h) + " pad" + Math.round(pad) +
+                          " k" + k.toFixed(3) + " frame" + Math.round(1872 * k) + "x" + Math.round(1404 * k);
+          document.body.appendChild(d);
+        }
+      };
+      var onReady = function () {
+        fitFrame();
+        /* a second pass once fonts and the status bar have settled */
+        setTimeout(fitFrame, 300);
+        window.addEventListener("resize", fitFrame);
+        window.addEventListener("orientationchange", function () { setTimeout(fitFrame, 250); });
+        if (window.visualViewport) window.visualViewport.addEventListener("resize", fitFrame);
+      };
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", onReady);
+      else onReady();
     }
     var paint = function () {
       ["viewToggle", "viewToggle_mob"].forEach(function (id) {
