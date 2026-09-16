@@ -135,6 +135,16 @@ HTML = '''<!DOCTYPE html>
       document.documentElement.setAttribute("data-view", "full");
       var m = document.querySelector('meta[name="viewport"]');
       if (m) m.setAttribute("content", "width=1024, viewport-fit=cover");
+      /* Added to the home screen, iOS runs the page under the status bar
+         because of the black-translucent bar style. At 1x that is what the
+         safe-area padding is for; zoomed out to a 1024px viewport the inset
+         no longer matches the bar, and the frame's top edge — the place name
+         and clock — ended up behind it with no way to scroll to it. In full
+         view the bar becomes its own opaque strip instead, so the page starts
+         below it. Set here, before first paint, because iOS reads the bar
+         style once. */
+      var bar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+      if (bar) bar.setAttribute("content", "default");
     }
     var paint = function () {
       ["viewToggle", "viewToggle_mob"].forEach(function (id) {

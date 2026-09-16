@@ -463,3 +463,24 @@
 }
 
 
+
+
+/* ── Full view (the phone footer's FULL VIEW toggle) ───────────────────
+   The desktop rules above already apply, because the toggle makes the
+   viewport 1024 wide. All that is left is to stop the frame being
+   clipped: it is sized from 100dvh, and on a home-screen phone the
+   height actually available is smaller than that calculation assumes.
+   Let the page scroll and anchor the frame to the top, so a frame that
+   does not fit can still be reached rather than being cut off. */
+html[data-view="full"], html[data-view="full"] body {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+}
+html[data-view="full"] .desktop-only-scaler {
+  height: auto;
+  min-height: 100dvh;
+  align-items: flex-start;
+  padding-top: max(env(safe-area-inset-top), 12px);
+  padding-bottom: max(env(safe-area-inset-bottom), 12px);
+}

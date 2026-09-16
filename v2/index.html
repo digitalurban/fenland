@@ -14,7 +14,7 @@
 <title>Fenland — v2 wind panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=1.10.3"></script>
+<script src="config.js?v=1.10.4"></script>
 <script>
 /* Resolve the theme before the stylesheets paint, otherwise a dark-mode user
    gets a white flash on every load. Deliberately inline and dependency-free:
@@ -64,6 +64,16 @@
       document.documentElement.setAttribute("data-view", "full");
       var m = document.querySelector('meta[name="viewport"]');
       if (m) m.setAttribute("content", "width=1024, viewport-fit=cover");
+      /* Added to the home screen, iOS runs the page under the status bar
+         because of the black-translucent bar style. At 1x that is what the
+         safe-area padding is for; zoomed out to a 1024px viewport the inset
+         no longer matches the bar, and the frame's top edge — the place name
+         and clock — ended up behind it with no way to scroll to it. In full
+         view the bar becomes its own opaque strip instead, so the page starts
+         below it. Set here, before first paint, because iOS reads the bar
+         style once. */
+      var bar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+      if (bar) bar.setAttribute("content", "default");
     }
     var paint = function () {
       ["viewToggle", "viewToggle_mob"].forEach(function (id) {
@@ -86,8 +96,8 @@
   } catch (e) { /* a broken storage must never leave the page unusable */ }
 })();
 </script>
-<link rel="stylesheet" href="css/dashboard.css?v=1.10.3">
-<link rel="stylesheet" href="css/panels.css?v=1.10.3">
+<link rel="stylesheet" href="css/dashboard.css?v=1.10.4">
+<link rel="stylesheet" href="css/panels.css?v=1.10.4">
 <script>
 /* The bar skin is a stylesheet override, so it has to be decided before the
    first paint rather than by a script at the end of the body — otherwise the
@@ -96,7 +106,7 @@
 (function () {
   try {
     if (String(((window.WXCONFIG || {}).windPanel) || "bars").toLowerCase() === "dials") return;
-    document.write('<link rel="stylesheet" href="css/windtrace.css?v=1.10.3">');
+    document.write('<link rel="stylesheet" href="css/windtrace.css?v=1.10.4">');
   } catch (e) { /* a broken config must never leave the page unstyled */ }
 })();
 </script>
@@ -391,18 +401,18 @@
     </div>
   </div>
 
-<script src="src/units.js?v=1.10.3"></script>
-<script src="src/colours.js?v=1.10.3"></script>
-<script src="src/airquality.js?v=1.10.3"></script>
-<script src="src/dashboard.js?v=1.10.3"></script>
-<script src="src/windtrace.js?v=1.10.3"></script>
-<script src="src/tempchart.js?v=1.10.3"></script>
-<script src="src/ensemble.js?v=1.10.3"></script>
-<script src="src/forecast.js?v=1.10.3"></script>
-<script src="src/climate.js?v=1.10.3"></script>
-<script src="src/verify-panel.js?v=1.10.3"></script>
-<script src="src/windrose.js?v=1.10.3"></script>
-<script src="src/solar.js?v=1.10.3"></script>
-<script src="src/windy.js?v=1.10.3"></script>
+<script src="src/units.js?v=1.10.4"></script>
+<script src="src/colours.js?v=1.10.4"></script>
+<script src="src/airquality.js?v=1.10.4"></script>
+<script src="src/dashboard.js?v=1.10.4"></script>
+<script src="src/windtrace.js?v=1.10.4"></script>
+<script src="src/tempchart.js?v=1.10.4"></script>
+<script src="src/ensemble.js?v=1.10.4"></script>
+<script src="src/forecast.js?v=1.10.4"></script>
+<script src="src/climate.js?v=1.10.4"></script>
+<script src="src/verify-panel.js?v=1.10.4"></script>
+<script src="src/windrose.js?v=1.10.4"></script>
+<script src="src/solar.js?v=1.10.4"></script>
+<script src="src/windy.js?v=1.10.4"></script>
 </body>
 </html>
