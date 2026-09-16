@@ -189,7 +189,7 @@
   function columnBox(k, H) {
     var fs = gaugeFont(k);
     var left = 2.4 * fs + 10 * k;                      // "B8" plus its tick
-    var right = 7.6 * fs + 6 * k;                      // "00.0 mph" at 1.5x
+    var right = 9.6 * fs + 6 * k;                      // "00.0 mph" at 1.35x, plus the arrow
     var avail = 960 - left - right;
     var wanted = (H - 56 * k) / COL_ASPECT;            // 56k is Y0 + the bottom margin
     var colW = Math.min(150 * k, Math.max(40 * k, Math.min(avail, wanted)));
@@ -262,7 +262,7 @@
     s += mk("wt-daymax", "wt-daymax-lbl", PAPER);
     s += mk("wt-peak", "wt-peak-lbl", RED);
     s += '<g class="wt-needle"><text class="wt-now-lbl" x="' + f(cx + colW + 12 * k) + '" y="' + f(fs * 0.36) +
-         '" font-family="' + MONO + '" font-size="' + f(fs * 1.5) + '" font-weight="600" fill="' + INK + '"></text>' +
+         '" font-family="' + MONO + '" font-size="' + f(fs * 1.35) + '" font-weight="600" fill="' + INK + '"></text>' +
          '<line x1="' + f(cx) + '" y1="0" x2="' + f(cx + colW) + '" y2="0" stroke="' + PAPER +
          '" stroke-width="' + f(6 * k) + '" opacity="0.75"></line>' +
          '<line x1="' + f(cx) + '" y1="0" x2="' + f(cx + colW) + '" y2="0" stroke="' + INK +
@@ -289,7 +289,18 @@
 
 
     var nowLbl = el.querySelector(".wt-now-lbl");
-    if (nowLbl) nowLbl.textContent = f(p.s) + " " + windUnit();
+    if (nowLbl) {
+      /* A tenth of a mph is below the anemometer's real precision, and at two
+         digits "19.4 mph" is two characters wider than the gutter beside the
+         column — which is how the reading came to be clipped. Keep the decimal
+         only in light airs, where it is the difference between a calm and a
+         breeze, and clamp what is drawn to the viewBox either way. */
+      nowLbl.textContent = (p.s < 10 ? f(p.s) : String(Math.round(p.s))) + " " + windUnit();
+      var ntw = 0;
+      try { ntw = nowLbl.getComputedTextLength() || 0; } catch (e) {}
+      if (!ntw) ntw = nowLbl.textContent.length * 0.62 * gaugeFont(g.k) * 1.35;
+      nowLbl.setAttribute("x", f(Math.min(g.cx + g.colW + 12 * g.k, Math.max(g.cx + g.colW + 4 * g.k, 960 - 3 * g.k - ntw))));
+    }
     spring(el.querySelector(".wt-needle"), p.s, function (v) {
       el._wtSpeed = v;
       el.querySelector(".wt-needle").style.transform = "translateY(" + g.y(v) + "px)";
@@ -363,10 +374,33 @@
              bx: function (d) { return X0 + (X1 - X0) * (norm(d) - LO) / (HI - LO); } };
   }
 
+  /* The tick lane and the cardinal labels below it, from ONE place. Both were
+     computed twice — here and in tapeData — from k alone: 12k down from the
+     top, 1.7 label heights up from the bottom. The tape's viewBox height is
+     its CSS height times 960/width, so a wide, shallow box (a 1024-wide iPad,
+     or any window that is not full screen) gave an H those two constants
+     together exceeded: bot landed ABOVE top, every tick came out with
+     negative height, and the strip showed nothing but its cardinals. Both
+     measurements are now capped as fractions of H, so the lane keeps a
+     readable depth at any shape of box. */
+  function tapeLanes(H, k) {
+    var fs = Math.min(16 * k, H * 0.34);
+    var top = Math.min(12 * k, H * 0.12);
+    var bot = H - fs * 1.55;
+    if (bot - top < H * 0.30) bot = top + H * 0.30;
+    return { fs: fs, top: top, bot: bot };
+  }
+
   function tapeStatic(H, k) {
-    var W = 960, X0 = 8 * k, X1 = W - 8 * k, fsCard = 16 * k;
-    var top = 12 * k, bot = H - fsCard * 1.7;
-    var bx = function (d) { return X0 + (X1 - X0) * (norm(d) - LO) / (HI - LO); };
+    var L = tapeLanes(H, k);
+    var W = 960, X0 = 8 * k, X1 = W - 8 * k, fsCard = L.fs;
+    var top = L.top, bot = L.bot;
+    /* The FIXED scale must not wrap. norm() folds 540 back to 180 — correct
+       for a live bearing, wrong for laying out a strip whose two ends are
+       both south: it put the right-hand S label and the right-hand cardinal
+       tick on top of the left edge, so the tape simply ran out of marks past
+       SE. The scale is authored in raw 180..540, so map it raw. */
+    var bx = function (v) { return X0 + (X1 - X0) * (v - LO) / (HI - LO); };
 
     var s = '<rect x="' + f(X0) + '" y="' + f(top) + '" width="' + f(X1 - X0) + '" height="' + f(bot - top) +
             '" fill="' + PAPER + '" stroke="' + FAINT + '" stroke-width="' + f(1.6 * k) + '"></rect>';
@@ -407,7 +441,7 @@
          scale, and crispEdges snaps them to the pixel grid rather than
          letting antialiasing spread them below visibility. */
       s += '<line x1="' + f(x) + '" y1="' + f(t) + '" x2="' + f(x) + '" y2="' + f(b2) +
-           '" shape-rendering="crispEdges" stroke="' + (inter ? INK : half ? SLATE : MIST) +
+           '" shape-rendering="crispEdges" stroke="' + (inter ? INK : half ? SLATE : SLATE) +
            '" stroke-width="' + f((card ? 5.0 : inter ? 3.0 : half ? 2.6 : 2.2) * k) + '"></line>';
     }
 
@@ -447,7 +481,7 @@
     var g = tapeGeom(el), band = el.querySelector(".wt-band"), track = el.querySelector(".wt-track");
     if (!band || !track) return;
     var lo = null, hi = null, dots = "";
-    var top = 12 * g.k, bot = g.H - 16 * g.k * 1.7;
+    var L = tapeLanes(g.H, g.k), top = L.top, bot = L.bot;
     buf.forEach(function (p, idx) {
       if (p.d === null) return;
       var v = norm(p.d);
@@ -455,7 +489,7 @@
       hi = (hi === null) ? v : Math.max(hi, v);
       var t = idx / Math.max(1, buf.length - 1);
       dots += '<circle cx="' + f(g.bx(p.d)) + '" cy="' + f(bot - (bot - top) * 0.12) + '" r="' +
-              f((1 + 1.6 * t) * g.k) + '" fill="' + ACCENT + '" opacity="' + (0.15 + 0.6 * t).toFixed(2) + '"></circle>';
+              f((1.5 + 1.8 * t) * g.k) + '" fill="' + ACCENT + '" opacity="' + (0.15 + 0.6 * t).toFixed(2) + '"></circle>';
     });
     /* A steady wind gives hi === lo and a band of width zero, which is
        indistinguishable from a broken band — and on a settled day an iPad
