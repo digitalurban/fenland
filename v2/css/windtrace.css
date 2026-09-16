@@ -259,3 +259,99 @@
   /* the faces are gone, so the readout row no longer needs clearance */
   .wind-readout-row { padding-top: calc(18 * var(--k)); border-top: 2px solid var(--faint); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LANDSCAPE PHONE (full view, 1960x900 canvas)
+
+   Same parts, re-ranked for a canvas that is wide and short. The portrait
+   layout stacks hero over tiles and puts both charts in the right column;
+   here hero and tiles go side by side, which is the only way to lose a
+   whole row without making anything smaller, and the charts keep the right
+   column to themselves so a 24-hour trace stays wide.
+
+   Type is re-sized because k is now roughly 0.49 of a 900-tall canvas
+   rather than 0.32 of a 1404-tall one: the hero would otherwise be wider
+   than its column.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  html[data-shape="wide"] .frame {
+    grid-template-columns: auto 1.05fr 1.1fr 1.75fr !important;
+    grid-template-rows: auto minmax(0, 1.45fr) minmax(0, 1fr) auto auto !important;
+    grid-template-areas:
+      "spine head  head  head"
+      "spine hero  tiles baro"
+      "spine hero  tiles temp"
+      "spine tape  tape  tape"
+      "foot  foot  foot  foot" !important;
+    row-gap: calc(18 * var(--k)) !important;
+    column-gap: calc(30 * var(--k)) !important;
+    padding: calc(30 * var(--k)) calc(34 * var(--k)) calc(24 * var(--k)) !important;
+  }
+
+  /* 240, not 200: the gauge draws its live speed in the gutter to the right
+     of the colour column, and a narrower spine clipped it against the rule. */
+  html[data-shape="wide"] .wind-spine { width: calc(240 * var(--k)); padding-right: calc(14 * var(--k)); }
+
+  /* header: one compact line */
+  html[data-shape="wide"] .brand .name { font-size: calc(30 * var(--k)); }
+  html[data-shape="wide"] .brand .coords { font-size: calc(15 * var(--k)); }
+  html[data-shape="wide"] .clock .time { font-size: calc(38 * var(--k)); }
+  html[data-shape="wide"] .clock .dateline { font-size: calc(15 * var(--k)); }
+  html[data-shape="wide"] .head { padding-bottom: calc(14 * var(--k)); }
+
+  /* hero: its column is 420 design px, so the reading is sized to sit in it
+     beside the glyph rather than overflow the rule */
+  /* The hero cell spans both band rows, so its content would otherwise sit
+     in the top half with a hole beneath it. The reading stays at the top and
+     the three-cell strip is pushed to the floor, where it lines up with the
+     last row of tiles and the foot of the temperature chart. */
+  html[data-shape="wide"] .hero { padding-right: calc(26 * var(--k)); justify-content: flex-start; }
+  html[data-shape="wide"] .hero-sub { margin-top: auto; }
+  html[data-shape="wide"] .hero-glyph { width: calc(76 * var(--k)); height: calc(76 * var(--k)); }
+  html[data-shape="wide"] .hero-top { gap: calc(18 * var(--k)); }
+  html[data-shape="wide"] .hero-temp { font-size: calc(100 * var(--k)); }
+  html[data-shape="wide"] .hero-temp .deg { font-size: calc(38 * var(--k)); margin-top: calc(10 * var(--k)); }
+  html[data-shape="wide"] .hero-cond { font-size: calc(24 * var(--k)); margin: calc(12 * var(--k)) 0 calc(6 * var(--k)); }
+  html[data-shape="wide"] .hero-extremes { font-size: calc(16 * var(--k)); margin-bottom: calc(14 * var(--k)); gap: calc(14 * var(--k)); }
+  html[data-shape="wide"] .hero-sub .lbl { font-size: calc(14 * var(--k)); letter-spacing: .14em; margin-bottom: calc(4 * var(--k)); }
+  html[data-shape="wide"] .hero-sub .val { font-size: calc(34 * var(--k)); }
+  html[data-shape="wide"] .hero-sub .val .u { font-size: calc(17 * var(--k)); }
+
+  /* tiles: ten in two columns, five rows of the band */
+  html[data-shape="wide"] .tiles { padding-right: calc(20 * var(--k)); }
+  html[data-shape="wide"] .tiles .tile .t-lbl { font-size: calc(15 * var(--k)); letter-spacing: .10em; }
+  html[data-shape="wide"] .tiles .tile .t-val { font-size: calc(30 * var(--k)); }
+  html[data-shape="wide"] .tiles .tile .t-val .u { font-size: calc(17 * var(--k)); }
+  html[data-shape="wide"] .tiles .tile .t-note { font-size: calc(14 * var(--k)); }
+
+  /* charts: the right column is one stack, both traces staying wide */
+  html[data-shape="wide"] .eyebrow { font-size: calc(16 * var(--k)); letter-spacing: .22em; margin-bottom: calc(4 * var(--k)); }
+  html[data-shape="wide"] .baro-read .now { font-size: calc(44 * var(--k)); }
+  html[data-shape="wide"] .baro-head { margin-bottom: calc(6 * var(--k)); }
+  /* the forecast line is the one thing in this column that can give up
+     height to the chart, so it reads as a single tight line */
+  /* the forecast is a label-beside-text row on the 4:3 canvas; in a 715
+     design-px column the two together overrun it, so they stack and the
+     sentence sizes down to fit on one line */
+  html[data-shape="wide"] .nowcast {
+    margin-top: calc(6 * var(--k));
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(1 * var(--k));
+    border-left-width: calc(5 * var(--k));
+    padding-left: calc(12 * var(--k));
+  }
+  html[data-shape="wide"] .nowcast .nc-lbl { font-size: calc(13 * var(--k)); margin-bottom: 0; letter-spacing: .16em; }
+  html[data-shape="wide"] .nowcast .nc-txt { font-size: calc(24 * var(--k)); white-space: nowrap; }
+  html[data-shape="wide"] .baro-chart { min-height: 0; }
+  html[data-shape="wide"] .temp-trend { padding-top: calc(12 * var(--k)); }
+  html[data-shape="wide"] .temp-trend .eyebrow { margin-bottom: calc(6 * var(--k)); }
+  html[data-shape="wide"] .temp-chart { min-height: calc(90 * var(--k)); }
+
+  /* the tape turns the corner at the spine's foot, as it does in portrait */
+  html[data-shape="wide"] .wind-tape { padding-top: calc(8 * var(--k)); }
+  html[data-shape="wide"] .wind-tape .wt-block-tape .wt-box { height: calc(96 * var(--k)) !important; }
+  html[data-shape="wide"] .wt-dir-inline .val { font-size: calc(24 * var(--k)); }
+
+  html[data-shape="wide"] .foot { font-size: calc(16 * var(--k)); padding-top: calc(8 * var(--k)); }
+}

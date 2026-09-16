@@ -502,9 +502,10 @@ html[data-view="full"] .desktop-only-scaler {
 }
 
 html[data-view="full"] .frame {
-  /* JS sets --frame-w from the real viewport width; the height stays on the
-     design's own 1404 rows so type and spacing keep their proportions. */
+  /* JS sets both from the chosen design canvas; the aspect is the canvas's
+     own, so this is a scale and never a stretch. */
   width: var(--frame-w, calc(1872 * var(--k)));
+  height: var(--frame-h, calc(1404 * var(--k)));
   max-width: none;
 }
 html[data-view="full"], html[data-view="full"] body {

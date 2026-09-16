@@ -158,27 +158,37 @@ HTML = '''<!DOCTYPE html>
          from the scaler's own padding, with no lower clamp — whole frame,
          however small that makes it. Re-run on resize and rotation. */
       var fitFrame = function () {
-        var vv = window.visualViewport;
-        var w = vv ? vv.width : window.innerWidth;
-        var h = vv ? vv.height : window.innerHeight;
+        /* innerWidth/innerHeight, which the phone reported as exactly the
+           1024x473 that visualViewport did — and unlike visualViewport they
+           are the frame's own box when the page is tested in an iframe. */
+        var w = window.innerWidth, h = window.innerHeight;
         var pad = 24;
         var sc = document.querySelector(".desktop-only-scaler");
         if (sc) {
           var cs = getComputedStyle(sc);
           pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
         }
-        /* Fit the design pixel to whichever axis runs out first, then let the
-           frame keep the screen's own width rather than sitting in a 4:3
-           letterbox. The grid inside is proportional, so a landscape phone
-           spends the spare width on the columns instead of on empty margins.
-           The stretch is capped so the frame cannot become a ribbon. */
-        var kH = (h - pad - 4) / 1404;
-        var kW = (w - 8) / 1872;
-        var k = Math.min(kH, kW);
+        /* Two design canvases, not one stretched canvas.
+
+           The dashboard is drawn for 1872x1404 — 4:3. A landscape iPhone is
+           about 2.16:1, and scaling a 4:3 grid into it is what gave the
+           barograph a letterbox slot, opened gutters between the tiles and
+           left the spine a skinny column. So landscape gets its own canvas,
+           1960x900, whose proportions the screen already has: hero and tiles
+           move side by side and the two charts stay stacked and wide. Both
+           axes then scale by the same k — no non-uniform stretching, and no
+           4:3 letterbox either, because the canvas fits the screen. */
+        var wide = w / h > 1.7;
+        var dw = wide ? 1960 : 1872, dh = wide ? 900 : 1404;
+        var root = document.documentElement;
+        if (wide) root.setAttribute("data-shape", "wide");
+        else root.removeAttribute("data-shape");
+        var k = Math.min((w - 8) / dw, (h - pad - 4) / dh);
         if (!(k > 0)) return;
-        var fw = Math.min(w - 8, 1872 * k * 2.2);
-        document.documentElement.style.setProperty("--k", k.toFixed(4) + "px");
-        document.documentElement.style.setProperty("--frame-w", Math.round(fw) + "px");
+        var fw = dw * k;
+        root.style.setProperty("--k", k.toFixed(4) + "px");
+        root.style.setProperty("--frame-w", fw.toFixed(1) + "px");
+        root.style.setProperty("--frame-h", (dh * k).toFixed(1) + "px");
         if (/diag/.test(location.hash)) {
           var d = document.getElementById("fenFit") || document.createElement("div");
           d.id = "fenFit";
