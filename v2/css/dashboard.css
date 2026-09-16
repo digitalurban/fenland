@@ -477,10 +477,38 @@ html[data-view="full"], html[data-view="full"] body {
   min-height: 100%;
   overflow: visible;
 }
+html[data-view="full"] {
+  /* Two corrections to the desktop --k, both only true of a phone holding
+     the whole frame at once:
+
+     No floor. The 0.40px minimum keeps type legible on a short desktop
+     window, but here it wins the min() and builds a frame TALLER than the
+     screen — 562px of frame in a 473px landscape viewport — which is what
+     was cutting the header off the top. Full view asks for small but whole,
+     so the fit must be honoured at any size.
+
+     svh, not dvh. On the home screen dvh reported 594 against an actual
+     473 of visible height, so even an unfloored fit came out 20% too tall.
+     svh is the smallest the viewport gets, which is the one that has to
+     fit. */
+  --k: min(calc(100dvw / 1960), calc((100svh - var(--safe-v)) / 1404));
+}
 html[data-view="full"] .desktop-only-scaler {
   height: auto;
-  min-height: 100dvh;
+  min-height: 100svh;
   align-items: flex-start;
   padding-top: max(env(safe-area-inset-top), 12px);
   padding-bottom: max(env(safe-area-inset-bottom), 12px);
+}
+
+html[data-view="full"] .frame {
+  /* JS sets --frame-w from the real viewport width; the height stays on the
+     design's own 1404 rows so type and spacing keep their proportions. */
+  width: var(--frame-w, calc(1872 * var(--k)));
+  max-width: none;
+}
+html[data-view="full"], html[data-view="full"] body {
+  /* room to pan when pinched in */
+  overflow: auto;
+  touch-action: pan-x pan-y pinch-zoom;
 }

@@ -134,7 +134,10 @@ HTML = '''<!DOCTYPE html>
     if (full) {
       document.documentElement.setAttribute("data-view", "full");
       var m = document.querySelector('meta[name="viewport"]');
-      if (m) m.setAttribute("content", "width=1024, viewport-fit=cover");
+      /* user-scalable spelled out: pinch had stopped working because the
+         desktop rules put overflow:hidden on html and body, so there was
+         nothing to pan once zoomed. */
+      if (m) m.setAttribute("content", "width=1024, viewport-fit=cover, user-scalable=yes, maximum-scale=6");
       /* Added to the home screen, iOS runs the page under the status bar
          because of the black-translucent bar style. At 1x that is what the
          safe-area padding is for; zoomed out to a 1024px viewport the inset
@@ -164,16 +167,25 @@ HTML = '''<!DOCTYPE html>
           var cs = getComputedStyle(sc);
           pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
         }
-        var k = Math.min(w / 1960, (h - pad - 4) / 1404);
+        /* Fit the design pixel to whichever axis runs out first, then let the
+           frame keep the screen's own width rather than sitting in a 4:3
+           letterbox. The grid inside is proportional, so a landscape phone
+           spends the spare width on the columns instead of on empty margins.
+           The stretch is capped so the frame cannot become a ribbon. */
+        var kH = (h - pad - 4) / 1404;
+        var kW = (w - 8) / 1872;
+        var k = Math.min(kH, kW);
         if (!(k > 0)) return;
+        var fw = Math.min(w - 8, 1872 * k * 2.2);
         document.documentElement.style.setProperty("--k", k.toFixed(4) + "px");
+        document.documentElement.style.setProperty("--frame-w", Math.round(fw) + "px");
         if (/diag/.test(location.hash)) {
           var d = document.getElementById("fenFit") || document.createElement("div");
           d.id = "fenFit";
           d.setAttribute("style", "position:fixed;left:0;bottom:0;z-index:99999;background:#000;" +
             "color:#0f0;font:600 11px ui-monospace,monospace;padding:2px 5px");
           d.textContent = Math.round(w) + "x" + Math.round(h) + " pad" + Math.round(pad) +
-                          " k" + k.toFixed(3) + " frame" + Math.round(1872 * k) + "x" + Math.round(1404 * k);
+                          " k" + k.toFixed(3) + " frame" + Math.round(fw) + "x" + Math.round(1404 * k);
           document.body.appendChild(d);
         }
       };
