@@ -14,7 +14,7 @@
 <title>Fenland — v2 wind panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=1.10.1"></script>
+<script src="config.js?v=1.10.3"></script>
 <script>
 /* Resolve the theme before the stylesheets paint, otherwise a dark-mode user
    gets a white flash on every load. Deliberately inline and dependency-free:
@@ -48,8 +48,46 @@
   } catch (e) { /* a broken config must never leave the page unstyled */ }
 })();
 </script>
-<link rel="stylesheet" href="css/dashboard.css?v=1.10.1">
-<link rel="stylesheet" href="css/panels.css?v=1.10.1">
+<script>
+/* Whole-dashboard view on a phone. iOS "Request Desktop Website" changes the
+   user-agent, not the viewport: the page still lays out at 390 CSS px and
+   still gets the stacked phone layout, because the layout is chosen by a
+   1024px media query. Telling the phone it is 1024 wide and letting it zoom
+   out is the only thing that actually shows the whole frame — small, but
+   whole, and pinch-zoom still works. Inline and ahead of the stylesheets,
+   because swapping the viewport after first paint is not reliable. */
+(function () {
+  try {
+    var full = false;
+    try { full = localStorage.getItem("fenland-view") === "full"; } catch (e) {}
+    if (full) {
+      document.documentElement.setAttribute("data-view", "full");
+      var m = document.querySelector('meta[name="viewport"]');
+      if (m) m.setAttribute("content", "width=1024, viewport-fit=cover");
+    }
+    var paint = function () {
+      ["viewToggle", "viewToggle_mob"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = full ? "\u25A3 PHONE VIEW" : "\u25A2 FULL VIEW";
+        el.title = full ? "Showing the whole dashboard — tap for the phone layout"
+                        : "Show the whole dashboard, scaled down to fit";
+        el.style.display = (full || window.innerWidth < 1024) ? "" : "none";
+      });
+    };
+    document.addEventListener("click", function (e) {
+      var t = e.target && e.target.closest && e.target.closest("#viewToggle, #viewToggle_mob");
+      if (!t) return;
+      try { localStorage.setItem("fenland-view", full ? "phone" : "full"); } catch (err) {}
+      location.reload();
+    });
+    document.addEventListener("DOMContentLoaded", paint);
+    setInterval(paint, 1000);
+  } catch (e) { /* a broken storage must never leave the page unusable */ }
+})();
+</script>
+<link rel="stylesheet" href="css/dashboard.css?v=1.10.3">
+<link rel="stylesheet" href="css/panels.css?v=1.10.3">
 <script>
 /* The bar skin is a stylesheet override, so it has to be decided before the
    first paint rather than by a script at the end of the body — otherwise the
@@ -58,7 +96,7 @@
 (function () {
   try {
     if (String(((window.WXCONFIG || {}).windPanel) || "bars").toLowerCase() === "dials") return;
-    document.write('<link rel="stylesheet" href="css/windtrace.css?v=1.10.1">');
+    document.write('<link rel="stylesheet" href="css/windtrace.css?v=1.10.3">');
   } catch (e) { /* a broken config must never leave the page unstyled */ }
 })();
 </script>
@@ -143,6 +181,7 @@
         <span id="footSun">SUNRISE —:— · SUNSET —:—</span>
         <span id="footRefresh">REFRESH EVERY 15 MIN</span>
         <span class="foot-action" id="themeToggle" title="Theme">◐ AUTO</span>
+        <span class="foot-action" id="viewToggle" title="Layout" style="display:none">▢ FULL VIEW</span>
         <span class="foot-action" id="detailsTrigger">HISTORY &amp; FORECAST ▸</span>
         <span class="foot-credit" id="footCredit"></span>
       </footer>
@@ -352,18 +391,18 @@
     </div>
   </div>
 
-<script src="src/units.js?v=1.10.1"></script>
-<script src="src/colours.js?v=1.10.1"></script>
-<script src="src/airquality.js?v=1.10.1"></script>
-<script src="src/dashboard.js?v=1.10.1"></script>
-<script src="src/windtrace.js?v=1.10.1"></script>
-<script src="src/tempchart.js?v=1.10.1"></script>
-<script src="src/ensemble.js?v=1.10.1"></script>
-<script src="src/forecast.js?v=1.10.1"></script>
-<script src="src/climate.js?v=1.10.1"></script>
-<script src="src/verify-panel.js?v=1.10.1"></script>
-<script src="src/windrose.js?v=1.10.1"></script>
-<script src="src/solar.js?v=1.10.1"></script>
-<script src="src/windy.js?v=1.10.1"></script>
+<script src="src/units.js?v=1.10.3"></script>
+<script src="src/colours.js?v=1.10.3"></script>
+<script src="src/airquality.js?v=1.10.3"></script>
+<script src="src/dashboard.js?v=1.10.3"></script>
+<script src="src/windtrace.js?v=1.10.3"></script>
+<script src="src/tempchart.js?v=1.10.3"></script>
+<script src="src/ensemble.js?v=1.10.3"></script>
+<script src="src/forecast.js?v=1.10.3"></script>
+<script src="src/climate.js?v=1.10.3"></script>
+<script src="src/verify-panel.js?v=1.10.3"></script>
+<script src="src/windrose.js?v=1.10.3"></script>
+<script src="src/solar.js?v=1.10.3"></script>
+<script src="src/windy.js?v=1.10.3"></script>
 </body>
 </html>

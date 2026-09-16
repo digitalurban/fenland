@@ -89,7 +89,10 @@
   }
   .wind-tape { padding-bottom: 0; }
   .wind-tape .wt-block-tape { flex: 0 0 auto; margin-bottom: 0; }
-  .wind-tape .wt-block-tape .wt-box { height: calc(80 * var(--k)); }  /* beats the in-cell tape height below */
+  /* A floor as well as a scale: at 1024 wide the scaled height came to 40px
+     for a 750px-wide strip, and a lane that shallow leaves the cardinal
+     labels no room to sit under the ticks. */
+  .wind-tape .wt-block-tape .wt-box { height: max(58px, calc(80 * var(--k))); }
 
   /* The tower runs the full height of the frame's left edge, beside the
      header rather than under it, which is the only place it can be tall

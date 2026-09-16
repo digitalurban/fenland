@@ -119,6 +119,44 @@ HTML = '''<!DOCTYPE html>
   } catch (e) { /* a broken config must never leave the page unstyled */ }
 })();
 </script>
+<script>
+/* Whole-dashboard view on a phone. iOS "Request Desktop Website" changes the
+   user-agent, not the viewport: the page still lays out at 390 CSS px and
+   still gets the stacked phone layout, because the layout is chosen by a
+   1024px media query. Telling the phone it is 1024 wide and letting it zoom
+   out is the only thing that actually shows the whole frame — small, but
+   whole, and pinch-zoom still works. Inline and ahead of the stylesheets,
+   because swapping the viewport after first paint is not reliable. */
+(function () {
+  try {
+    var full = false;
+    try { full = localStorage.getItem("fenland-view") === "full"; } catch (e) {}
+    if (full) {
+      document.documentElement.setAttribute("data-view", "full");
+      var m = document.querySelector('meta[name="viewport"]');
+      if (m) m.setAttribute("content", "width=1024, viewport-fit=cover");
+    }
+    var paint = function () {
+      ["viewToggle", "viewToggle_mob"].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = full ? "\u25A3 PHONE VIEW" : "\u25A2 FULL VIEW";
+        el.title = full ? "Showing the whole dashboard — tap for the phone layout"
+                        : "Show the whole dashboard, scaled down to fit";
+        el.style.display = (full || window.innerWidth < 1024) ? "" : "none";
+      });
+    };
+    document.addEventListener("click", function (e) {
+      var t = e.target && e.target.closest && e.target.closest("#viewToggle, #viewToggle_mob");
+      if (!t) return;
+      try { localStorage.setItem("fenland-view", full ? "phone" : "full"); } catch (err) {}
+      location.reload();
+    });
+    document.addEventListener("DOMContentLoaded", paint);
+    setInterval(paint, 1000);
+  } catch (e) { /* a broken storage must never leave the page unusable */ }
+})();
+</script>
 <link rel="stylesheet" href="css/dashboard.css">
 <link rel="stylesheet" href="css/panels.css">
 <script>
