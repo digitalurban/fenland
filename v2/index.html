@@ -14,7 +14,7 @@
 <title>Fenland — v2 wind panel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="config.js?v=1.10.5"></script>
+<script src="config.js?v=1.10.6"></script>
 <script>
 /* Resolve the theme before the stylesheets paint, otherwise a dark-mode user
    gets a white flash on every load. Deliberately inline and dependency-free:
@@ -96,47 +96,8 @@
   } catch (e) { /* a broken storage must never leave the page unusable */ }
 })();
 </script>
-<script>
-/* Temporary (1.10.5-diag): full view is still clipping and the cause is not
-   visible from outside the device. Prints what the phone actually reports. */
-(function () {
-  if (document.documentElement.getAttribute("data-view") !== "full") return;
-  function show() {
-    var f = document.querySelector(".frame");
-    var s = document.querySelector(".desktop-only-scaler");
-    var cs = getComputedStyle(document.documentElement);
-    var box = f ? f.getBoundingClientRect() : null;
-    var sbox = s ? s.getBoundingClientRect() : null;
-    var vv = window.visualViewport;
-    var pad = function (el, p) { return el ? getComputedStyle(el).getPropertyValue(p) : "-"; };
-    var rows = [
-      "inner " + window.innerWidth + "x" + window.innerHeight,
-      "visual " + (vv ? Math.round(vv.width) + "x" + Math.round(vv.height) + " @" + vv.scale.toFixed(2) : "-"),
-      "screen " + screen.width + "x" + screen.height + " dpr" + window.devicePixelRatio,
-      "k " + cs.getPropertyValue("--k").trim() + "  safe-v " + cs.getPropertyValue("--safe-v").trim(),
-      "insets t" + pad(s, "padding-top") + " b" + pad(s, "padding-bottom"),
-      "scaler " + (sbox ? Math.round(sbox.width) + "x" + Math.round(sbox.height) + " @y" + Math.round(sbox.top) : "-"),
-      "frame " + (box ? Math.round(box.width) + "x" + Math.round(box.height) + " @y" + Math.round(box.top) : "-"),
-      "scrollY " + Math.round(window.scrollY) + " docH " + document.documentElement.scrollHeight,
-      "standalone " + (navigator.standalone === true) + " ratio " + (box ? (box.width / box.height).toFixed(2) : "-")
-    ];
-    var d = document.getElementById("fenDiag");
-    if (!d) {
-      d = document.createElement("div");
-      d.id = "fenDiag";
-      d.setAttribute("style", "position:fixed;top:0;left:0;z-index:99999;background:#000;color:#0f0;" +
-        "font:600 13px/1.45 ui-monospace,monospace;padding:6px 8px;white-space:pre;max-width:100%;" +
-        "border-bottom-right-radius:6px");
-      d.addEventListener("click", function () { d.remove(); });
-      document.body.appendChild(d);
-    }
-    d.textContent = rows.join("\n");
-  }
-  document.addEventListener("DOMContentLoaded", function () { show(); setInterval(show, 1000); });
-})();
-</script>
-<link rel="stylesheet" href="css/dashboard.css?v=1.10.5">
-<link rel="stylesheet" href="css/panels.css?v=1.10.5">
+<link rel="stylesheet" href="css/dashboard.css?v=1.10.6">
+<link rel="stylesheet" href="css/panels.css?v=1.10.6">
 <script>
 /* The bar skin is a stylesheet override, so it has to be decided before the
    first paint rather than by a script at the end of the body — otherwise the
@@ -145,7 +106,7 @@
 (function () {
   try {
     if (String(((window.WXCONFIG || {}).windPanel) || "bars").toLowerCase() === "dials") return;
-    document.write('<link rel="stylesheet" href="css/windtrace.css?v=1.10.5">');
+    document.write('<link rel="stylesheet" href="css/windtrace.css?v=1.10.6">');
   } catch (e) { /* a broken config must never leave the page unstyled */ }
 })();
 </script>
@@ -440,18 +401,18 @@
     </div>
   </div>
 
-<script src="src/units.js?v=1.10.5"></script>
-<script src="src/colours.js?v=1.10.5"></script>
-<script src="src/airquality.js?v=1.10.5"></script>
-<script src="src/dashboard.js?v=1.10.5"></script>
-<script src="src/windtrace.js?v=1.10.5"></script>
-<script src="src/tempchart.js?v=1.10.5"></script>
-<script src="src/ensemble.js?v=1.10.5"></script>
-<script src="src/forecast.js?v=1.10.5"></script>
-<script src="src/climate.js?v=1.10.5"></script>
-<script src="src/verify-panel.js?v=1.10.5"></script>
-<script src="src/windrose.js?v=1.10.5"></script>
-<script src="src/solar.js?v=1.10.5"></script>
-<script src="src/windy.js?v=1.10.5"></script>
+<script src="src/units.js?v=1.10.6"></script>
+<script src="src/colours.js?v=1.10.6"></script>
+<script src="src/airquality.js?v=1.10.6"></script>
+<script src="src/dashboard.js?v=1.10.6"></script>
+<script src="src/windtrace.js?v=1.10.6"></script>
+<script src="src/tempchart.js?v=1.10.6"></script>
+<script src="src/ensemble.js?v=1.10.6"></script>
+<script src="src/forecast.js?v=1.10.6"></script>
+<script src="src/climate.js?v=1.10.6"></script>
+<script src="src/verify-panel.js?v=1.10.6"></script>
+<script src="src/windrose.js?v=1.10.6"></script>
+<script src="src/solar.js?v=1.10.6"></script>
+<script src="src/windy.js?v=1.10.6"></script>
 </body>
 </html>
