@@ -330,19 +330,14 @@
   html[data-shape="wide"] .baro-head { margin-bottom: calc(6 * var(--k)); }
   /* the forecast line is the one thing in this column that can give up
      height to the chart, so it reads as a single tight line */
-  /* the forecast is a label-beside-text row on the 4:3 canvas; in a 715
-     design-px column the two together overrun it, so they stack and the
-     sentence sizes down to fit on one line */
-  html[data-shape="wide"] .nowcast {
-    margin-top: calc(6 * var(--k));
-    flex-direction: column;
-    align-items: flex-start;
-    gap: calc(1 * var(--k));
-    border-left-width: calc(5 * var(--k));
-    padding-left: calc(12 * var(--k));
+  /* the forecast now lives in the masthead, between the place and the clock */
+  html[data-shape="wide"] .head .nowcast {
+    border-left-width: calc(4 * var(--k));
+    padding-left: calc(11 * var(--k));
+    max-width: calc(300 * var(--k));
   }
-  html[data-shape="wide"] .nowcast .nc-lbl { font-size: calc(13 * var(--k)); margin-bottom: 0; letter-spacing: .16em; }
-  html[data-shape="wide"] .nowcast .nc-txt { font-size: calc(24 * var(--k)); white-space: nowrap; }
+  html[data-shape="wide"] .head .nowcast .nc-lbl { font-size: calc(11 * var(--k)); }
+  html[data-shape="wide"] .head .nowcast .nc-txt { font-size: calc(19 * var(--k)); }
   html[data-shape="wide"] .baro-chart { min-height: 0; }
   html[data-shape="wide"] .temp-trend { padding-top: calc(12 * var(--k)); }
   html[data-shape="wide"] .temp-trend .eyebrow { margin-bottom: calc(6 * var(--k)); }
@@ -354,4 +349,71 @@
   html[data-shape="wide"] .wt-dir-inline .val { font-size: calc(24 * var(--k)); }
 
   html[data-shape="wide"] .foot { font-size: calc(16 * var(--k)); padding-top: calc(8 * var(--k)); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1b — the tendency forecast in the masthead
+
+   It used to sit under the barograph, where it cost the chart 124 design px
+   of height for one sentence. The masthead is already a two-ender with the
+   place at one end and the clock at the other, so the forecast takes the
+   middle: no new row, and the chart gets the height back by simply being
+   the only thing left in its column.
+
+   It is set at reading size rather than headline size on purpose. In the
+   masthead it competes with the station name, and the name has to stay the
+   loudest thing on the page.
+   ═══════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  .head { gap: calc(34 * var(--k)); }
+  /* The masthead is now a three-ender, and flex was taking the shrink out of
+     the identity block first — the coords line broke after "DAVIS VANTAGE"
+     and dropped MQTT onto a second row. The place and the clock hold their
+     size; the forecast is the only thing allowed to give way, and it wraps
+     to a second line rather than pushing anything about. */
+  .head .brand, .head .clock { flex: 0 0 auto; }
+  .head .brand .coords { white-space: nowrap; }
+  .head .nowcast {
+    margin-top: 0;
+    align-self: flex-end;
+    flex: 0 1 auto;
+    max-width: calc(400 * var(--k));
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    border-left: calc(5 * var(--k)) solid var(--ink);
+    padding-left: calc(16 * var(--k));
+    padding-bottom: calc(2 * var(--k));
+  }
+  .head .nowcast .nc-lbl {
+    font-size: calc(12 * var(--k));
+    letter-spacing: .18em;
+    margin-bottom: calc(4 * var(--k));
+  }
+  .head .nowcast .nc-txt {
+    font-size: calc(23 * var(--k));
+    font-weight: 600;
+    line-height: 1.25;
+    text-wrap: pretty;
+  }
+
+  /* the chart is now the whole column below the reading */
+  .baro { justify-content: flex-start; }
+  .baro-chart { flex: 1 1 auto; min-height: calc(260 * var(--k)); }
+
+  /* ── 1c — slim tape ──────────────────────────────────────────────────
+     Same instrument, less of it. The block was about 150 design px across
+     two columns for a single bearing: a 96px lane, a header line of its
+     own, and four tick weights competing inside twenty units of depth.
+     Here the lane is 52, the header folds onto one tight line, and the
+     ticks carry two weights only — cardinals, which break the lane and
+     tie to their label, and everything else. Strokes stay at or above 2
+     design units so nothing thins out to invisibility when the frame is
+     scaled down on an iPad. */
+  .wind-tape { padding-top: calc(6 * var(--k)); }
+  .wind-tape .wt-block-tape .wt-box { height: max(46px, calc(52 * var(--k))) !important; }
+  .wind-tape .wt-head { gap: calc(18 * var(--k)); margin-bottom: calc(4 * var(--k)); }
+  .wind-tape .wt-head .wt-lbl { font-size: calc(12 * var(--k)); letter-spacing: .24em; }
+  .wind-tape .wt-head .wt-key { font-size: calc(11 * var(--k)); }
+  .wt-dir-inline .val { font-size: calc(21 * var(--k)); }
 }

@@ -384,7 +384,7 @@
      measurements are now capped as fractions of H, so the lane keeps a
      readable depth at any shape of box. */
   function tapeLanes(H, k) {
-    var fs = Math.min(16 * k, H * 0.34);
+    var fs = Math.min(13 * k, H * 0.34);
     var top = Math.min(12 * k, H * 0.12);
     var bot = H - fs * 1.55;
     if (bot - top < H * 0.30) bot = top + H * 0.30;
@@ -430,10 +430,13 @@
          mark. Running N/E/S/W past the lane's lower edge into the gutter
          above their label gives them a shape nothing else has, and ties each
          one visually to the word underneath it. */
-      var t = inter ? top
-            : half ? top + (bot - top) * 0.30
-            : top + (bot - top) * 0.50;
-      var b2 = card ? bot + 7 * k : bot;
+      /* Two depths, not three. In a 52-unit lane three levels of tick read
+         as noise rather than as a hierarchy — the 30% and 50% marks sat
+         close enough to look like an accident. The 45-degree marks run the
+         full lane, the 11.25-degree subdivisions rise from just under half,
+         and only the cardinals break out below it. */
+      var t = inter ? top : top + (bot - top) * 0.44;
+      var b2 = card ? bot + 6 * k : bot;
       /* The desktop frame is transform-scaled to fit the viewport, so a tick
          drawn at 1.4 units came out around three-quarters of a CSS pixel on a
          1024-wide iPad — and in MIST, the palette's lightest grey, which
@@ -441,8 +444,8 @@
          scale, and crispEdges snaps them to the pixel grid rather than
          letting antialiasing spread them below visibility. */
       s += '<line x1="' + f(x) + '" y1="' + f(t) + '" x2="' + f(x) + '" y2="' + f(b2) +
-           '" shape-rendering="crispEdges" stroke="' + (inter ? INK : half ? SLATE : SLATE) +
-           '" stroke-width="' + f((card ? 5.0 : inter ? 3.0 : half ? 2.6 : 2.2) * k) + '"></line>';
+           '" shape-rendering="crispEdges" stroke="' + (card ? INK : inter ? SLATE : MIST) +
+           '" stroke-width="' + f((card ? 3.6 : 2.0) * k) + '"></line>';
     }
 
     var NAMES = { 0: "N", 45: "NE", 90: "E", 135: "SE", 180: "S", 225: "SW", 270: "W", 315: "NW" };
